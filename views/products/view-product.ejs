@@ -1,0 +1,187 @@
+<div class="container py-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/products">Products</a></li>
+            <li class="breadcrumb-item active" aria-current="page"><%= product.name %></li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Product Images -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <% if (product.images && product.images.length > 0) { %>
+                        <div id="productImages" class="carousel slide" data-bs-ride="carousel">
+                            <div class="carousel-inner">
+                                <% product.images.forEach((image, index) => { %>
+                                    <div class="carousel-item <%= index === 0 ? 'active' : '' %>">
+                                        <img src="<%= image %>" 
+                                             class="d-block w-100" 
+                                             alt="<%= product.name %>"
+                                             style="height: 400px; object-fit: contain;"
+                                             onerror="this.onerror=null; this.src='https://via.placeholder.com/400x400?text=No+Image'">
+                                    </div>
+                                <% }); %>
+                            </div>
+                            <% if (product.images.length > 1) { %>
+                                <button class="carousel-control-prev" type="button" data-bs-target="#productImages" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#productImages" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            <% } %>
+                        </div>
+                    <% } else { %>
+                        <img src="/images/placeholder.png" 
+                             class="img-fluid" 
+                             alt="Product placeholder"
+                             style="height: 400px; width: 100%; object-fit: contain;">
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Details -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="h2 mb-3"><%= product.name %></h1>
+                    
+                    <div class="mb-3">
+                        <h5 class="text-primary mb-0">₹<%= product.price.toLocaleString() %></h5>
+                        <small class="text-muted">Minimum Order: <%= product.minOrderQuantity %> units</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="badge <%= product.stock > 0 ? 'bg-success' : 'bg-danger' %>">
+                            <%= product.stock > 0 ? 'In Stock' : 'Out of Stock' %>
+                        </span>
+                        <span class="ms-2 text-muted">Category: <%= product.category %></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Description</h5>
+                        <p><%= product.description %></p>
+                    </div>
+
+                    <% if (product.specifications && Object.keys(product.specifications).length > 0) { %>
+                        <div class="mb-4">
+                            <h5>Specifications</h5>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <% Object.entries(product.specifications).forEach(([key, value]) => { %>
+                                        <tr>
+                                            <th style="width: 30%"><%= key %></th>
+                                            <td><%= value %></td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } %>
+
+                    <% if (product.shippingInfo) { %>
+                        <div class="mb-4">
+                            <h5>Shipping Information</h5>
+                            <table class="table table-sm">
+                                <tbody>
+                                    <% if (product.shippingInfo.weight) { %>
+                                        <tr>
+                                            <th style="width: 30%">Weight</th>
+                                            <td><%= product.shippingInfo.weight %> g</td>
+                                        </tr>
+                                    <% } %>
+                                    <% if (product.shippingInfo.dimensions) { %>
+                                        <tr>
+                                            <th>Dimensions</th>
+                                            <td>
+                                                <%= product.shippingInfo.dimensions.length || 0 %> × 
+                                                <%= product.shippingInfo.dimensions.width || 0 %> × 
+                                                <%= product.shippingInfo.dimensions.height || 0 %> cm
+                                            </td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } %>
+
+                    <div class="mb-4">
+                        <h5>Seller Information</h5>
+                        <p class="mb-1">
+                            <strong><%= product.seller.companyName %></strong>
+                        </p>
+                        <p class="mb-0">
+                            <a href="mailto:<%= product.seller.email %>" class="text-decoration-none">
+                                <i class="fas fa-envelope"></i> Contact Seller
+                            </a>
+                        </p>
+                    </div>
+
+                    <% if (user && user.role === 'buyer') { %>
+                        <form id="addToCartForm" class="mt-4">
+                            <input type="hidden" name="productId" value="<%= product._id %>">
+                            <input type="hidden" name="productName" value="<%= product.name %>">
+                            <input type="hidden" name="productPrice" value="<%= product.price %>">
+                            <input type="hidden" name="productImage" value="<%= product.images && product.images.length > 0 ? product.images[0] : '' %>">
+                            <div class="form-group">
+                                <label for="quantity">Quantity:</label>
+                                <input type="number" class="form-control" id="quantity" name="quantity" value="1" min="1" max="99">
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-2">Add to Cart</button>
+                        </form>
+
+                        <script>
+                        document.getElementById('addToCartForm').addEventListener('submit', async function(e) {
+                            e.preventDefault();
+                            
+                            try {
+                                const formData = new FormData(this);
+                                const data = {
+                                    productId: formData.get('productId'),
+                                    productName: formData.get('productName'),
+                                    productPrice: parseFloat(formData.get('productPrice')),
+                                    productImage: formData.get('productImage'),
+                                    quantity: parseInt(formData.get('quantity'))
+                                };
+
+                                const response = await fetch('/api/cart', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    credentials: 'include',
+                                    body: JSON.stringify(data)
+                                });
+
+                                const result = await response.json();
+
+                                if (result.success) {
+                                    // Update cart count in the navbar
+                                    const cartCountElement = document.getElementById('cartCount');
+                                    if (cartCountElement && result.data.cartCount !== undefined) {
+                                        cartCountElement.textContent = result.data.cartCount;
+                                    }
+
+                                    // Show success message and redirect to cart
+                                    alert('Product added to cart successfully!');
+                                    window.location.href = '/cart';
+                                } else {
+                                    throw new Error(result.message || 'Failed to add product to cart');
+                                }
+                            } catch (error) {
+                                console.error('Error:', error);
+                                alert(error.message || 'An error occurred while adding to cart');
+                            }
+                        });
+                        </script>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

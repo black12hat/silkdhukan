@@ -1,0 +1,218 @@
+<%- contentFor('body') %>
+<div class="container py-5">
+    <h1 class="mb-4 animate__animated animate__fadeIn">My Orders</h1>
+    
+    <% if (!user || user.role !== 'buyer') { %>
+        <div class="alert alert-warning animate__animated animate__fadeIn">
+            Please <a href="/login?redirect=/orders">login</a> as a buyer to view your orders.
+        </div>
+    <% } else { %>
+        <!-- Order Tabs -->
+        <ul class="nav nav-tabs mb-4" id="orderTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                    All Orders
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="processing-tab" data-bs-toggle="tab" data-bs-target="#processing" type="button" role="tab">
+                    Processing
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab">
+                    Completed
+                </button>
+            </li>
+        </ul>
+
+        <!-- Order Tabs Content -->
+        <div class="tab-content" id="orderTabsContent">
+            <!-- All Orders -->
+            <div class="tab-pane fade show active" id="all" role="tabpanel">
+                <div id="all-orders" class="orders-container">
+                    <!-- Orders will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Processing Orders -->
+            <div class="tab-pane fade" id="processing" role="tabpanel">
+                <div id="processing-orders" class="orders-container">
+                    <!-- Processing orders will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Completed Orders -->
+            <div class="tab-pane fade" id="completed" role="tabpanel">
+                <div id="completed-orders" class="orders-container">
+                    <!-- Completed orders will be loaded here -->
+                </div>
+            </div>
+        </div>
+    <% } %>
+</div>
+
+<%- contentFor('extraScripts') %>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // Load orders data
+        const response = await fetch('/api/orders');
+        if (!response.ok) throw new Error('Failed to load orders');
+        
+        const { data } = await response.json();
+        
+        // Update orders container
+        const container = document.getElementById('orders-container');
+        if (!data || data.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-5 animate__animated animate__fadeIn">
+                    <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
+                    <h3>No Orders Yet</h3>
+                    <p>You haven't placed any orders yet. Start shopping to see your orders here!</p>
+                    <a href="/products" class="btn btn-primary">
+                        <i class="fas fa-store me-2"></i>Browse Products
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = data.map(order => `
+            <div class="card mb-3 animate__animated animate__fadeIn">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="card-title">Order #${order._id}</h5>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-calendar me-2"></i>
+                                ${new Date(order.createdAt).toLocaleDateString()}
+                            </p>
+                        </div>
+                        <span class="badge bg-${getStatusColor(order.status)}">
+                            ${order.status}
+                        </span>
+                    </div>
+                    <hr>
+                    <div class="order-items">
+                        ${order.items.map(item => `
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong>${item.productName}</strong>
+                                    <div class="text-muted small">
+                                        Quantity: ${item.quantity} x ₹${item.productPrice.toFixed(2)}
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <strong>₹${(item.productPrice * item.quantity).toFixed(2)}</strong>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Total Amount:</strong>
+                            <span class="text-primary ms-2">₹${order.totalAmount.toFixed(2)}</span>
+                        </div>
+                        <div>
+                            <button class="btn btn-outline-primary" onclick="window.location.href='/orders/${order._id}'">
+                                <i class="fas fa-eye me-2"></i>View Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+    } catch (error) {
+        console.error('Orders error:', error);
+        const container = document.getElementById('orders-container');
+        container.innerHTML = `
+            <div class="alert alert-danger animate__animated animate__shakeX">
+                <h5>Error Loading Orders</h5>
+                <p>${error.message}</p>
+                <button class="btn btn-primary mt-2" onclick="window.location.reload()">
+                    Try Again
+                </button>
+            </div>
+        `;
+    }
+});
+
+function getStatusColor(status) {
+    switch (status.toLowerCase()) {
+        case 'pending':
+            return 'warning';
+        case 'processing':
+            return 'info';
+        case 'shipped':
+            return 'primary';
+        case 'delivered':
+            return 'success';
+        case 'completed':
+            return 'success';
+        case 'cancelled':
+            return 'danger';
+        case 'disputed':
+            return 'danger';
+        default:
+            return 'secondary';
+    }
+}
+</script>
+
+<%- contentFor('extraStyles') %>
+<style>
+.orders-container {
+    min-height: 200px;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+}
+
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5em 0.8em;
+}
+
+.nav-tabs .nav-link {
+    color: #495057;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    animation-duration: 0.5s;
+}
+
+.animate__animated {
+    animation-duration: 0.5s;
+}
+
+.animate__fadeIn {
+    animation-delay: 0.1s;
+}
+
+.animate__shakeX {
+    animation-duration: 0.5s;
+}
+</style> 

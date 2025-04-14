@@ -1,0 +1,274 @@
+<%- contentFor('body') %>
+<div class="container py-5">
+    <div class="row">
+        <!-- Profile Sidebar -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <img src="<%= user.profileImage || '/images/default-avatar.png' %>" 
+                             alt="Profile Image" 
+                             class="rounded-circle"
+                             style="width: 150px; height: 150px; object-fit: cover;">
+                    </div>
+                    <h4><%= user.firstName %> <%= user.lastName %></h4>
+                    <p class="text-muted"><%= user.role.charAt(0).toUpperCase() + user.role.slice(1) %></p>
+                    <a href="/settings" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-cog"></i> Edit Profile
+                    </a>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Quick Stats</h5>
+                    <% if (user.role === 'buyer') { %>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Cart Items:</span>
+                            <span><%= cart ? cart.items.length : 0 %></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Orders:</span>
+                            <span><%= orders ? orders.length : 0 %></span>
+                        </div>
+                    <% } else { %>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Active Products:</span>
+                            <span><%= products ? products.length : 0 %></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Orders:</span>
+                            <span><%= orders ? orders.length : 0 %></span>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-8">
+            <% if (user.role === 'buyer') { %>
+                <!-- Buyer's Recent Orders -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Recent Orders</h5>
+                        <% if (orders && orders.length > 0) { %>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Date</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% orders.forEach(order => { %>
+                                            <tr>
+                                                <td><%= order._id.toString().slice(-6) %></td>
+                                                <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
+                                                <td>₹<%= order.totalAmount.toFixed(2) %></td>
+                                                <td>
+                                                    <span class="badge bg-<%= order.status === 'completed' ? 'success' : 'warning' %>">
+                                                        <%= order.status %>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a href="/orders/<%= order._id %>" class="btn btn-sm btn-outline-primary">
+                                                        View Details
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="/orders" class="btn btn-outline-primary">View All Orders</a>
+                            </div>
+                        <% } else { %>
+                            <p class="text-muted">No orders yet.</p>
+                            <a href="/prod" class="btn btn-outline-primary">Start Shopping</a>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Buyer's Cart Summary -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Cart Summary</h5>
+                        <% if (cart && cart.items.length > 0) { %>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Quantity</th>
+                                            <th>Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% cart.items.forEach(item => { %>
+                                            <tr>
+                                                <td><%= item.productName %></td>
+                                                <td><%= item.quantity %></td>
+                                                <td>₹<%= (item.productPrice * item.quantity).toFixed(2) %></td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-end">
+                                <strong>Total: ₹<%= cart.totalAmount.toFixed(2) %></strong>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="/cart" class="btn btn-outline-primary">Go to Cart</a>
+                            </div>
+                        <% } else { %>
+                            <p class="text-muted">Your cart is empty.</p>
+                            <a href="/prod" class="btn btn-outline-primary">Browse Products</a>
+                        <% } %>
+                    </div>
+                </div>
+            <% } else { %>
+                <!-- Seller's Recent Products -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Recent Products</h5>
+                        <% if (products && products.length > 0) { %>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Price</th>
+                                            <th>Stock</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% products.forEach(product => { %>
+                                            <tr>
+                                                <td><%= product.name %></td>
+                                                <td>₹<%= product.price.toFixed(2) %></td>
+                                                <td><%= product.stock %></td>
+                                                <td>
+                                                    <span class="badge bg-<%= product.status === 'active' ? 'success' : 'warning' %>">
+                                                        <%= product.status %>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a href="/products/edit/<%= product._id %>" class="btn btn-sm btn-outline-primary">
+                                                        Edit
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="/seller/products" class="btn btn-outline-primary">Manage Products</a>
+                            </div>
+                        <% } else { %>
+                            <p class="text-muted">No products added yet.</p>
+                            <a href="/products/create" class="btn btn-outline-primary">Add New Product</a>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Seller's Recent Orders -->
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Recent Orders</h5>
+                        <% if (orders && orders.length > 0) { %>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Buyer</th>
+                                            <th>Date</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% orders.forEach(order => { %>
+                                            <tr>
+                                                <td><%= order._id.toString().slice(-6) %></td>
+                                                <td><%= order.buyer.firstName %> <%= order.buyer.lastName %></td>
+                                                <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
+                                                <td>₹<%= order.totalAmount.toFixed(2) %></td>
+                                                <td>
+                                                    <span class="badge bg-<%= order.status === 'completed' ? 'success' : 'warning' %>">
+                                                        <%= order.status %>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <a href="/seller/orders/<%= order._id %>" class="btn btn-sm btn-outline-primary">
+                                                        View Details
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="text-center mt-3">
+                                <a href="/seller/orders" class="btn btn-outline-primary">View All Orders</a>
+                            </div>
+                        <% } else { %>
+                            <p class="text-muted">No orders yet.</p>
+                        <% } %>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- contentFor('style') %>
+<style>
+.card {
+    border: none;
+    border-radius: 10px;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.badge {
+    padding: 0.5em 1em;
+    border-radius: 50px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.btn-outline-primary {
+    border-width: 2px;
+}
+
+.profile-image {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style> 

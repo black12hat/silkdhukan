@@ -1,0 +1,87 @@
+<div class="filter-section">
+    <h3>Filters</h3>
+    
+    <!-- Search -->
+    <div class="filter-group">
+        <label for="searchInput">Search Products</label>
+        <input type="text" id="searchInput" class="form-control" placeholder="Search by name or description...">
+    </div>
+
+    <!-- Categories -->
+    <div class="filter-group">
+        <label>Categories</label>
+        <div class="form-check">
+            <input class="form-check-input category-checkbox" type="checkbox" value="all" id="allCategories" checked>
+            <label class="form-check-label" for="allCategories">All Categories</label>
+        </div>
+        <% categories.forEach(category => { %>
+            <div class="form-check">
+                <input class="form-check-input category-checkbox" type="checkbox" value="<%= category %>" id="category<%= category %>">
+                <label class="form-check-label" for="category<%= category %>"><%= category %></label>
+            </div>
+        <% }); %>
+    </div>
+
+    <!-- Price Range -->
+    <div class="filter-group">
+        <label>Price Range</label>
+        <div class="price-range">
+            <div>
+                <label for="minPriceInput">Min</label>
+                <input type="number" id="minPriceInput" class="form-control" min="0" step="100">
+                <span id="minPriceDisplay">0</span>
+            </div>
+            <div>
+                <label for="maxPriceInput">Max</label>
+                <input type="number" id="maxPriceInput" class="form-control" min="0" step="100">
+                <span id="maxPriceDisplay">10000</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Availability -->
+    <div class="filter-group">
+        <label>Availability</label>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="availability" value="all" id="availabilityAll" checked>
+            <label class="form-check-label" for="availabilityAll">All</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="availability" value="inStock" id="availabilityInStock">
+            <label class="form-check-label" for="availabilityInStock">In Stock</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="radio" name="availability" value="outOfStock" id="availabilityOutOfStock">
+            <label class="form-check-label" for="availabilityOutOfStock">Out of Stock</label>
+        </div>
+    </div>
+
+    <!-- Date Added -->
+    <div class="filter-group">
+        <label for="dateAdded">Date Added</label>
+        <select id="dateAdded" class="form-control">
+            <option value="all">All Time</option>
+            <option value="lastWeek">Last Week</option>
+            <option value="lastMonth">Last Month</option>
+            <option value="lastYear">Last Year</option>
+        </select>
+    </div>
+
+    <!-- Sort -->
+    <div class="filter-group">
+        <label for="sortSelect">Sort By</label>
+        <select id="sortSelect" class="form-control">
+            <option value="default">Default</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+            <option value="name-asc">Name: A to Z</option>
+            <option value="name-desc">Name: Z to A</option>
+            <option value="newest">Newest First</option>
+        </select>
+    </div>
+
+    <!-- Clear Filters -->
+    <button id="clearFilters" class="btn btn-outline-secondary w-100">
+        <i class="fas fa-times me-2"></i>Clear Filters
+    </button>
+</div> 

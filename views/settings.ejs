@@ -1,0 +1,374 @@
+<%- contentFor('body') %>
+<div class="container py-5">
+    <div class="row">
+        <div class="col-md-3">
+            <!-- Settings Navigation -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Settings</h5>
+                    <div class="list-group list-group-flush">
+                        <a href="#profile" class="list-group-item list-group-item-action active" data-bs-toggle="list">
+                            <i class="fas fa-user me-2"></i>Profile
+                        </a>
+                        <a href="#security" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                            <i class="fas fa-lock me-2"></i>Security
+                        </a>
+                        <% if (user.role === 'seller') { %>
+                            <a href="#business" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                                <i class="fas fa-store me-2"></i>Business
+                            </a>
+                        <% } %>
+                        <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                            <i class="fas fa-bell me-2"></i>Notifications
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="tab-content">
+                <!-- Profile Settings -->
+                <div class="tab-pane fade show active" id="profile">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Profile Settings</h5>
+                            <form id="profileForm" class="needs-validation" novalidate>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="firstName" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="firstName" name="firstName" 
+                                               value="<%= user.firstName %>" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="lastName" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="lastName" name="lastName" 
+                                               value="<%= user.lastName %>" required>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="<%= user.email %>" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Phone</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" 
+                                           value="<%= user.phone || '' %>">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="profileImage" class="form-label">Profile Image</label>
+                                    <input type="file" class="form-control" id="profileImage" name="profileImage" 
+                                           accept="image/*">
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Settings -->
+                <div class="tab-pane fade" id="security">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Security Settings</h5>
+                            <form id="securityForm" class="needs-validation" novalidate>
+                                <div class="mb-3">
+                                    <label for="currentPassword" class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" id="currentPassword" 
+                                           name="currentPassword" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="newPassword" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="newPassword" 
+                                           name="newPassword" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirmPassword" 
+                                           name="confirmPassword" required>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">Update Password</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <% if (user.role === 'seller') { %>
+                <!-- Business Settings -->
+                <div class="tab-pane fade" id="business">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Business Settings</h5>
+                            <form id="businessForm" class="needs-validation" novalidate>
+                                <div class="mb-3">
+                                    <label for="companyName" class="form-label">Company Name</label>
+                                    <input type="text" class="form-control" id="companyName" name="companyName" 
+                                           value="<%= user.companyName || '' %>" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="businessType" class="form-label">Business Type</label>
+                                    <select class="form-select" id="businessType" name="businessType" required>
+                                        <option value="">Select Business Type</option>
+                                        <option value="manufacturer" <%= user.businessType === 'manufacturer' ? 'selected' : '' %>>Manufacturer</option>
+                                        <option value="wholesaler" <%= user.businessType === 'wholesaler' ? 'selected' : '' %>>Wholesaler</option>
+                                        <option value="retailer" <%= user.businessType === 'retailer' ? 'selected' : '' %>>Retailer</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="businessAddress" class="form-label">Business Address</label>
+                                    <textarea class="form-control" id="businessAddress" name="businessAddress" 
+                                              rows="3" required><%= user.businessAddress || '' %></textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="gstNumber" class="form-label">GST Number</label>
+                                    <input type="text" class="form-control" id="gstNumber" name="gstNumber" 
+                                           value="<%= user.gstNumber || '' %>">
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">Save Business Details</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Notification Settings -->
+                <div class="tab-pane fade" id="notifications">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Notification Settings</h5>
+                            <form id="notificationForm">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="emailNotifications" 
+                                               name="emailNotifications" <%= user.emailNotifications ? 'checked' : '' %>>
+                                        <label class="form-check-label" for="emailNotifications">
+                                            Email Notifications
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="orderUpdates" 
+                                               name="orderUpdates" <%= user.orderUpdates ? 'checked' : '' %>>
+                                        <label class="form-check-label" for="orderUpdates">
+                                            Order Updates
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="promotionalEmails" 
+                                               name="promotionalEmails" <%= user.promotionalEmails ? 'checked' : '' %>>
+                                        <label class="form-check-label" for="promotionalEmails">
+                                            Promotional Emails
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary">Save Notification Settings</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation
+(function() {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+})();
+
+// Handle profile form submission
+document.getElementById('profileForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    try {
+        const formData = new FormData(this);
+        const response = await fetch('/api/profile', {
+            method: 'PUT',
+            body: formData
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            alert('Profile updated successfully!');
+            window.location.reload();
+        } else {
+            throw new Error(result.message || 'Failed to update profile');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message || 'An error occurred while updating profile');
+    }
+});
+
+// Handle security form submission
+document.getElementById('securityForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    try {
+        const formData = new FormData(this);
+        const response = await fetch('/api/profile/password', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                currentPassword: formData.get('currentPassword'),
+                newPassword: formData.get('newPassword')
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            alert('Password updated successfully!');
+            this.reset();
+        } else {
+            throw new Error(result.message || 'Failed to update password');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message || 'An error occurred while updating password');
+    }
+});
+
+<% if (user.role === 'seller') { %>
+// Handle business form submission
+document.getElementById('businessForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    try {
+        const formData = new FormData(this);
+        const response = await fetch('/api/profile/business', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                companyName: formData.get('companyName'),
+                businessType: formData.get('businessType'),
+                businessAddress: formData.get('businessAddress'),
+                gstNumber: formData.get('gstNumber')
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            alert('Business details updated successfully!');
+            window.location.reload();
+        } else {
+            throw new Error(result.message || 'Failed to update business details');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message || 'An error occurred while updating business details');
+    }
+});
+<% } %>
+
+// Handle notification form submission
+document.getElementById('notificationForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    try {
+        const formData = new FormData(this);
+        const response = await fetch('/api/profile/notifications', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                emailNotifications: formData.get('emailNotifications') === 'on',
+                orderUpdates: formData.get('orderUpdates') === 'on',
+                promotionalEmails: formData.get('promotionalEmails') === 'on'
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            alert('Notification settings updated successfully!');
+        } else {
+            throw new Error(result.message || 'Failed to update notification settings');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert(error.message || 'An error occurred while updating notification settings');
+    }
+});
+</script>
+
+<%- contentFor('style') %>
+<style>
+.card {
+    border: none;
+    border-radius: 10px;
+}
+
+.list-group-item {
+    border: none;
+    padding: 0.75rem 1.25rem;
+}
+
+.list-group-item.active {
+    background-color: #f8f9fa;
+    color: #0d6efd;
+    border-left: 3px solid #0d6efd;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #dc3545;
+}
+
+.was-validated .form-control:invalid ~ .invalid-feedback,
+.was-validated .form-control:invalid ~ .invalid-feedback,
+.was-validated .form-select:invalid ~ .invalid-feedback {
+    display: block;
+}
+
+.was-validated .form-control:valid ~ .valid-feedback,
+.was-validated .form-control:valid ~ .valid-feedback,
+.was-validated .form-select:valid ~ .valid-feedback {
+    display: block;
+}
+</style> 

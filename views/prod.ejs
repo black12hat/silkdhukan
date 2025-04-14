@@ -1,0 +1,1088 @@
+<!-- products.ejs -->
+<%
+// Extract unique categories, brands, and features from database products
+const uniqueCategories = [...new Set(products.map(product => product.category))];
+const uniqueBrands = [...new Set(products.map(product => product.brand || 'Unbranded'))];
+const uniqueFeatures = [...new Set(products.flatMap(product => product.features || []))];
+
+// Sort options
+const sortOptions = [
+    { value: 'newest', label: 'Newest First' },
+    { value: 'price-asc', label: 'Price: Low to High' },
+    { value: 'price-desc', label: 'Price: High to Low' },
+    { value: 'name-asc', label: 'Name: A to Z' },
+    { value: 'name-desc', label: 'Name: Z to A' },
+    { value: 'rating-desc', label: 'Highest Rated' },
+    { value: 'discount-desc', label: 'Highest Discount' },
+    { value: 'popular', label: 'Most Popular' }
+];
+
+// Price ranges
+const priceRanges = [
+    { min: 0, max: 1000, label: 'Under ₹1,000' },
+    { min: 1000, max: 2000, label: '₹1,000 - ₹2,000' },
+    { min: 2000, max: 5000, label: '₹2,000 - ₹5,000' },
+    { min: 5000, max: 10000, label: '₹5,000 - ₹10,000' },
+    { min: 10000, max: Infinity, label: 'Over ₹10,000' }
+];
+
+// Date ranges
+const dateRanges = [
+    { value: 'all', label: 'All Time' },
+    { value: 'lastWeek', label: 'Last Week' },
+    { value: 'lastMonth', label: 'Last Month' },
+    { value: 'lastYear', label: 'Last Year' }
+];
+%>
+
+<!-- Header Section -->
+<div class="container-fluid mt-2">
+    <div class="row mb-2">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h1 class="silk-collection-heading">
+                <i class="fas fa-store me-2"></i>Silk Collection
+            </h1>
+            <button class="btn btn-primary cart-button" onclick="window.location.href='/cart'">
+                <i class="fas fa-shopping-cart me-2"></i>
+                Cart
+                <span class="badge bg-white text-primary ms-2" id="cartCount">0</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <i class="fas fa-box me-2"></i>
+                                Showing <span id="filteredProducts">0</span> of <span id="totalProducts">0</span> products
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <i class="fas fa-tag me-2"></i>
+                                Price Range: <span id="priceRange">₹0 - ₹0</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <i class="fas fa-star me-2"></i>
+                                Average Rating: <span id="avgRating">0</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <i class="fas fa-percentage me-2"></i>
+                                Average Discount: <span id="avgDiscount">0</span>%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="container-fluid">
+    <div class="row">
+        <!-- Filter Sidebar -->
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Filters</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Filter Stats -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Filter Statistics</h6>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Showing:</span>
+                            <span id="filteredProducts">0</span>
+                            <span>of</span>
+                            <span id="totalProducts">0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Price Range:</span>
+                            <span id="priceRange">₹0 - ₹0</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Avg Rating:</span>
+                            <span id="avgRating">0.0</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Avg Discount:</span>
+                            <span id="avgDiscount">0.0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Search</h6>
+                        <div class="input-group">
+                            <input type="text" id="searchInput" class="form-control" placeholder="Search products...">
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Categories -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Categories</h6>
+                        <div class="form-check">
+                            <input class="form-check-input category-checkbox" type="checkbox" value="all" id="allCategories" checked>
+                            <label class="form-check-label" for="allCategories">All Categories</label>
+                        </div>
+                        <% uniqueCategories.forEach(category => { %>
+                            <div class="form-check">
+                                <input class="form-check-input category-checkbox" type="checkbox" value="<%= category %>" id="category<%= category %>">
+                                <label class="form-check-label" for="category<%= category %>"><%= category %></label>
+                            </div>
+                        <% }); %>
+                    </div>
+
+                    <!-- Brands -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Brands</h6>
+                        <% uniqueBrands.forEach(brand => { %>
+                            <div class="form-check">
+                                <input class="form-check-input brand-checkbox" type="checkbox" value="<%= brand %>" id="brand<%= brand %>">
+                                <label class="form-check-label" for="brand<%= brand %>"><%= brand %></label>
+                            </div>
+                        <% }); %>
+                    </div>
+
+                    <!-- Price Range -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Price Range</h6>
+                        <div class="d-flex align-items-center mb-2">
+                            <span>₹<span id="minPriceDisplay">0</span></span>
+                            <input type="range" class="form-range mx-2" id="minPriceInput" min="0" max="10000" step="100">
+                            <span>₹<span id="maxPriceDisplay">10000</span></span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span>₹<span id="minPriceDisplay2">0</span></span>
+                            <input type="range" class="form-range mx-2" id="maxPriceInput" min="0" max="10000" step="100">
+                            <span>₹<span id="maxPriceDisplay2">10000</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Rating -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Rating</h6>
+                        <% for(let i = 5; i >= 0; i--) { %>
+                            <div class="form-check">
+                                <input class="form-check-input rating-radio" type="radio" name="rating" value="<%= i %>" id="rating<%= i %>">
+                                <label class="form-check-label" for="rating<%= i %>">
+                                    <% for(let j = 0; j < 5; j++) { %>
+                                        <% if(j < i) { %>
+                                            <i class="fas fa-star text-warning"></i>
+                                        <% } else { %>
+                                            <i class="far fa-star text-muted"></i>
+                                        <% } %>
+                                    <% } %>
+                                    <%= i === 0 ? ' Any' : ' & Up' %>
+                                </label>
+                            </div>
+                        <% } %>
+                    </div>
+
+                    <!-- Seller Rating -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Seller Rating</h6>
+                        <% for(let i = 5; i >= 0; i--) { %>
+                            <div class="form-check">
+                                <input class="form-check-input seller-rating-radio" type="radio" name="sellerRating" value="<%= i %>" id="sellerRating<%= i %>">
+                                <label class="form-check-label" for="sellerRating<%= i %>">
+                                    <% for(let j = 0; j < 5; j++) { %>
+                                        <% if(j < i) { %>
+                                            <i class="fas fa-star text-warning"></i>
+                                        <% } else { %>
+                                            <i class="far fa-star text-muted"></i>
+                                        <% } %>
+                                    <% } %>
+                                    <%= i === 0 ? ' Any' : ' & Up' %>
+                                </label>
+                            </div>
+                        <% } %>
+                    </div>
+
+                    <!-- Availability -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Availability</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="availability" value="all" id="availabilityAll" checked>
+                            <label class="form-check-label" for="availabilityAll">All</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="availability" value="inStock" id="availabilityInStock">
+                            <label class="form-check-label" for="availabilityInStock">In Stock</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="availability" value="outOfStock" id="availabilityOutOfStock">
+                            <label class="form-check-label" for="availabilityOutOfStock">Out of Stock</label>
+                        </div>
+                    </div>
+
+                    <!-- Date Added -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Date Added</h6>
+                        <select class="form-select" id="dateAdded">
+                            <option value="all">All Time</option>
+                            <option value="lastWeek">Last Week</option>
+                            <option value="lastMonth">Last Month</option>
+                            <option value="lastYear">Last Year</option>
+                        </select>
+                    </div>
+
+                    <!-- Features -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Features</h6>
+                        <% uniqueFeatures.forEach(feature => { %>
+                            <div class="form-check">
+                                <input class="form-check-input feature-checkbox" type="checkbox" value="<%= feature %>" id="feature<%= feature %>">
+                                <label class="form-check-label" for="feature<%= feature %>"><%= feature %></label>
+                            </div>
+                        <% }); %>
+                    </div>
+
+                    <!-- Discount -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Discount</h6>
+                        <select class="form-select" id="discount">
+                            <option value="0">Any</option>
+                            <option value="10">10% or more</option>
+                            <option value="20">20% or more</option>
+                            <option value="30">30% or more</option>
+                            <option value="40">40% or more</option>
+                            <option value="50">50% or more</option>
+                        </select>
+                    </div>
+
+                    <!-- Clear Filters -->
+                    <button class="btn btn-outline-primary w-100" id="clearFilters">
+                        <i class="fas fa-times-circle me-2"></i>Clear Filters
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="col-md-9">
+            <!-- Sort Options -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <select class="form-select" id="sortSelect">
+                                <option value="default">Default</option>
+                                <option value="price-asc">Price: Low to High</option>
+                                <option value="price-desc">Price: High to Low</option>
+                                <option value="rating-desc">Highest Rated</option>
+                                <option value="name-asc">Name: A to Z</option>
+                                <option value="name-desc">Name: Z to A</option>
+                                <option value="discount-desc">Highest Discount</option>
+                                <option value="popular">Most Popular</option>
+                                <option value="newest">Newest First</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Grid -->
+            <div class="row" id="productsGrid">
+                <!-- Products will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Color Variables */
+:root {
+    --primary: #8a3433;
+    --primary-light: #b05b59;
+    --primary-dark: #6a2726;
+    --accent: #d4af37;
+    --accent-light: #e6c76a;
+    --accent-dark: #b38f2d;
+    --text-dark: #333333;
+    --text-light: #ffffff;
+    --bg-light: #fcfaf7;
+    --bg-cream: #f6f2e9;
+    --border-light: #e0d9cc;
+}
+
+/* Header Styles */
+.silk-collection-heading {
+    color: var(--primary);
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 0;
+    padding: 0;
+}
+
+.cart-button {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    padding: 0.5rem 1.5rem;
+    font-size: 1.1rem;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+}
+
+.cart-button:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.cart-button .badge {
+    font-size: 1rem;
+    padding: 0.5em 0.8em;
+    border-radius: 15px;
+}
+
+/* Filter Section Styles */
+.filter-section {
+    position: sticky;
+    top: 20px;
+    z-index: 1000;
+    background-color: var(--bg-light);
+    border: 1px solid var(--border-light);
+}
+
+.filter-section .card-header {
+    background-color: var(--primary-dark) !important;
+    color: var(--text-light) !important;
+}
+
+.filter-group {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.filter-group::-webkit-scrollbar {
+    width: 6px;
+}
+
+.filter-group::-webkit-scrollbar-track {
+    background: var(--bg-cream);
+    border-radius: 3px;
+}
+
+.filter-group::-webkit-scrollbar-thumb {
+    background: var(--primary-light);
+    border-radius: 3px;
+}
+
+.filter-group::-webkit-scrollbar-thumb:hover {
+    background: var(--primary);
+}
+
+/* Price Range Styles */
+.price-range {
+    padding: 0 10px;
+}
+
+.price-range input[type="range"] {
+    width: 100%;
+    margin: 10px 0;
+}
+
+.price-range input[type="range"]::-webkit-slider-thumb {
+    background: var(--primary);
+}
+
+.price-range input[type="range"]::-webkit-slider-runnable-track {
+    background: var(--border-light);
+}
+
+/* Rating Filter Styles */
+.rating-filter .form-check {
+    margin-bottom: 5px;
+}
+
+.rating-filter .fa-star {
+    font-size: 0.9em;
+    color: var(--accent);
+}
+
+/* Product Card Styles */
+.hover-shadow {
+    transition: all 0.3s ease;
+    background-color: var(--text-light);
+    border: 1px solid var(--border-light);
+}
+
+.hover-shadow:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(138, 52, 51, 0.15) !important;
+}
+
+.card-img-top {
+    transition: all 0.3s ease;
+}
+
+.hover-shadow:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.card-title {
+    color: var(--text-dark);
+}
+
+.card-text {
+    color: var(--text-dark);
+}
+
+/* Filter Stats Styles */
+.stat-item {
+    padding: 10px;
+    border-radius: 5px;
+    background-color: var(--bg-cream);
+    border: 1px solid var(--border-light);
+}
+
+.stat-item i {
+    color: var(--primary);
+}
+
+/* Badge Styles */
+.badge {
+    font-size: 0.8em;
+    padding: 0.5em 0.8em;
+}
+
+.badge.bg-danger {
+    background-color: var(--primary) !important;
+}
+
+.badge.bg-secondary {
+    background-color: var(--primary-light) !important;
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-check:checked + .btn-outline-primary {
+    background-color: var(--primary);
+    color: var(--text-light);
+}
+
+.btn-outline-secondary {
+    color: var(--text-dark);
+    border-color: var(--border-light);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--bg-cream);
+    border-color: var(--border-light);
+}
+
+/* Form Controls */
+.form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(138, 52, 51, 0.25);
+}
+
+.form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(138, 52, 51, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* Price Display */
+.h5.mb-0 {
+    color: var(--primary);
+}
+
+.text-decoration-line-through {
+    color: var(--primary-light) !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .filter-section {
+        position: static;
+        margin-bottom: 20px;
+    }
+    
+    .stat-item {
+        margin-bottom: 10px;
+    }
+}
+
+/* Rating Button Styles */
+.rating-buttons,
+.seller-rating-buttons {
+    margin-bottom: 10px;
+}
+
+.rating-btn,
+.seller-rating-btn {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.rating-preview,
+.seller-rating-preview {
+    background-color: var(--bg-cream);
+    padding: 8px;
+    border-radius: 5px;
+    border: 1px solid var(--border-light);
+}
+
+.rating-star,
+.seller-rating-star {
+    color: var(--accent);
+    font-size: 1.1em;
+}
+
+.rating-text,
+.seller-rating-text {
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.btn-check:checked + .rating-btn,
+.btn-check:checked + .seller-rating-btn {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: var(--text-light);
+}
+
+.btn-check + .rating-btn:hover,
+.btn-check + .seller-rating-btn:hover {
+    background-color: var(--primary-light);
+    border-color: var(--primary-light);
+    color: var(--text-light);
+}
+
+/* Cart Notification Styles */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 300px;
+    max-width: 400px;
+    padding: 15px 20px;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out;
+}
+
+.notification.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.notification.alert-error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+</style>
+
+<!-- Add necessary scripts -->
+
+<script>
+    // Initialize cart with proper error handling
+    let cart;
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            cart = new Cart();
+            const initialized = await cart.init();
+            if (!initialized) {
+                console.error('Failed to initialize cart');
+                // Disable all add to cart buttons if cart initialization fails
+                document.querySelectorAll('.add-to-cart').forEach(button => {
+                    button.disabled = true;
+                    button.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Login Required';
+                });
+            }
+        } catch (error) {
+            console.error('Error initializing cart:', error);
+        }
+    });
+
+    // Pass server-side data to client
+    window.products = <%- JSON.stringify(products || []) %>;
+    window.categories = <%- JSON.stringify(uniqueCategories) %>;
+    window.brands = <%- JSON.stringify(uniqueBrands) %>;
+    window.features = <%- JSON.stringify(uniqueFeatures) %>;
+
+    // Add to cart event handler
+    document.addEventListener('click', async function(e) {
+        const button = e.target.closest('.add-to-cart');
+        if (!button) return;
+
+        try {
+            // Get product data from button attributes
+            const productId = button.dataset.productId;
+            const quantity = 1; // Default quantity
+            
+            // Debug log
+            console.log('Adding to cart:', {
+                productId,
+                quantity
+            });
+
+            // Validate data
+            if (!productId) {
+                throw new Error('Invalid product data');
+            }
+
+            // Disable button and show loading state
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Adding...';
+            
+            // Add to cart using Cart class
+            await cart.addItem(productId, quantity);
+            
+            // Show success state
+            button.innerHTML = '<i class="fas fa-check me-2"></i>Added to Cart';
+            
+            // Reset button after 2 seconds
+            setTimeout(() => {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>Add to Cart';
+            }, 2000);
+        } catch (error) {
+            console.error('Add to cart error:', error);
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-shopping-cart me-2"></i>Add to Cart';
+            cart.showNotification(error.message, 'error');
+        }
+    });
+</script>
+<script src="/js/ProductFilter.js"></script>
+<script src="/js/prod.js"></script>
+
+<!-- Rest of the existing code -->
+<script>
+// Initialize product filter
+let productFilter = new ProductFilter(productsData);
+    
+// Initialize UI
+document.addEventListener('DOMContentLoaded', () => {
+    // Update product display
+    updateProductDisplay();
+    
+    // Add event listeners with debounce
+    const debouncedUpdate = debounce(() => {
+        updateProductDisplay();
+    }, 300);
+    
+    // Search input
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+        productFilter.updateSearchQuery(e.target.value);
+        debouncedUpdate();
+    });
+    
+    // Sort select
+    document.getElementById('sortSelect').addEventListener('change', (e) => {
+        productFilter.updateSort(e.target.value);
+        debouncedUpdate();
+    });
+    
+    // Category filter checkboxes
+    document.querySelectorAll('.category-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
+                .map(cb => cb.value);
+            productFilter.updateCategories(selectedCategories);
+            debouncedUpdate();
+        });
+    });
+
+    // Brand filter checkboxes
+    document.querySelectorAll('.brand-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const selectedBrands = Array.from(document.querySelectorAll('.brand-checkbox:checked'))
+                .map(cb => cb.value);
+            productFilter.updateBrand(selectedBrands);
+            debouncedUpdate();
+        });
+    });
+    
+    // Price range inputs
+    const minPriceInput = document.getElementById('minPrice');
+    const maxPriceInput = document.getElementById('maxPrice');
+    const minPriceDisplay = document.getElementById('minPriceDisplay');
+    const maxPriceDisplay = document.getElementById('maxPriceDisplay');
+    const minPriceInputField = document.getElementById('minPriceInput');
+    const maxPriceInputField = document.getElementById('maxPriceInput');
+    
+    // Set initial values
+    minPriceInput.value = 0;
+    maxPriceInput.value = 10000;
+    minPriceDisplay.textContent = '0';
+    maxPriceDisplay.textContent = '10000';
+    
+    // Debounced price range update
+    const updatePriceRange = debounce((min, max) => {
+        productFilter.updatePriceRange(min, max);
+        debouncedUpdate();
+    }, 300);
+    
+    // Price range event listeners
+    minPriceInput.addEventListener('input', (e) => {
+        const value = parseFloat(e.target.value);
+        const maxValue = parseFloat(maxPriceInput.value);
+        if (value <= maxValue) {
+            minPriceDisplay.textContent = value;
+            minPriceInputField.value = value;
+            updatePriceRange(value, maxValue);
+        } else {
+            e.target.value = maxValue;
+            minPriceDisplay.textContent = maxValue;
+            minPriceInputField.value = maxValue;
+            updatePriceRange(maxValue, maxValue);
+        }
+    });
+    
+    maxPriceInput.addEventListener('input', (e) => {
+        const value = parseFloat(e.target.value);
+        const minValue = parseFloat(minPriceInput.value);
+        if (value >= minValue) {
+            maxPriceDisplay.textContent = value;
+            maxPriceInputField.value = value;
+            updatePriceRange(minValue, value);
+        } else {
+            e.target.value = minValue;
+            maxPriceDisplay.textContent = minValue;
+            maxPriceInputField.value = minValue;
+            updatePriceRange(minValue, minValue);
+        }
+    });
+
+    // Price input fields
+    minPriceInputField.addEventListener('input', debounce((e) => {
+        const value = parseFloat(e.target.value) || 0;
+        const maxValue = parseFloat(maxPriceInput.value);
+        if (value <= maxValue) {
+            minPriceInput.value = value;
+            minPriceDisplay.textContent = value;
+            updatePriceRange(value, maxValue);
+        }
+    }, 300));
+
+    maxPriceInputField.addEventListener('input', debounce((e) => {
+        const value = parseFloat(e.target.value) || 10000;
+        const minValue = parseFloat(minPriceInput.value);
+        if (value >= minValue) {
+            maxPriceInput.value = value;
+            maxPriceDisplay.textContent = value;
+            updatePriceRange(minValue, value);
+        }
+    }, 300));
+
+    // Other filter event listeners
+    document.querySelectorAll('input[name="availability"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            productFilter.updateAvailability(e.target.value);
+            debouncedUpdate();
+        });
+    });
+
+    document.getElementById('dateAdded').addEventListener('change', (e) => {
+        productFilter.updateDateAdded(e.target.value);
+        debouncedUpdate();
+    });
+
+    document.querySelectorAll('.feature-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const selectedFeatures = Array.from(document.querySelectorAll('.feature-checkbox:checked'))
+                .map(cb => cb.value);
+            productFilter.updateFeatures(selectedFeatures);
+            debouncedUpdate();
+        });
+    });
+    
+    document.querySelectorAll('.rating-radio').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const rating = parseInt(e.target.value);
+            updateRatingDisplay(rating, ratingStars, ratingText);
+            productFilter.updateRating(rating);
+            debouncedUpdate();
+        });
+    });
+
+    document.querySelectorAll('.seller-rating-radio').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const rating = parseInt(e.target.value);
+            updateRatingDisplay(rating, sellerRatingStars, sellerRatingText, 'Seller');
+            productFilter.updateSellerRating(rating);
+            debouncedUpdate();
+        });
+    });
+
+    document.getElementById('discount').addEventListener('change', (e) => {
+        productFilter.updateDiscount(parseFloat(e.target.value));
+        debouncedUpdate();
+    });
+
+    // Clear filters button
+    document.getElementById('clearFilters').addEventListener('click', () => {
+        // Reset all checkboxes
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        
+        // Reset radio buttons
+        document.querySelectorAll('input[type="radio"]').forEach(rb => {
+            if (rb.value === 'all') rb.checked = true;
+        });
+        
+        // Reset selects
+        document.getElementById('sortSelect').selectedIndex = 0;
+        document.getElementById('dateAdded').selectedIndex = 0;
+        document.getElementById('discount').selectedIndex = 0;
+        
+        // Reset price range
+        minPriceInput.value = 0;
+        maxPriceInput.value = 10000;
+        minPriceDisplay.textContent = '0';
+        maxPriceDisplay.textContent = '10000';
+        minPriceInputField.value = '';
+        maxPriceInputField.value = '';
+        
+        // Reset search
+        document.getElementById('searchInput').value = '';
+        
+        // Reset filter
+        productFilter = new ProductFilter(productsData);
+        debouncedUpdate();
+    });
+});
+
+// Debounce function
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
+// Update product display
+function updateProductDisplay() {
+    const filteredProducts = productFilter.applyFilters();
+    const productsGrid = document.getElementById('productsGrid');
+    
+    // Update filter stats
+    const stats = productFilter.getFilterStats();
+    document.getElementById('totalProducts').textContent = stats.totalProducts;
+    document.getElementById('filteredProducts').textContent = stats.filteredCount;
+    document.getElementById('priceRange').textContent = '₹' + stats.priceRange.min.toFixed(2) + ' - ₹' + stats.priceRange.max.toFixed(2);
+    document.getElementById('avgRating').textContent = stats.averageRating.toFixed(1);
+    document.getElementById('avgDiscount').textContent = stats.averageDiscount.toFixed(1) + '%';
+    
+    // Clear and rebuild products grid
+    productsGrid.innerHTML = '';
+    
+    if (filteredProducts.length === 0) {
+        productsGrid.innerHTML = 
+            '<div class="col-12">' +
+                '<div class="alert alert-info">' +
+                    '<i class="fas fa-info-circle me-2"></i>No products found matching your filters.' +
+                '</div>' +
+            '</div>';
+        return;
+    }
+    
+    // Create document fragment for better performance
+    const fragment = document.createDocumentFragment();
+    
+    filteredProducts.forEach(product => {
+        const productCard = document.createElement('div');
+        productCard.className = 'col-md-4 mb-4';
+        
+        const ratingStars = Array(5).fill(0).map((_, i) => 
+            '<i class="fas fa-star ' + (i < (product.averageRating || 0) ? 'text-warning' : 'text-muted') + '"></i>'
+        ).join('');
+        
+        const discountBadge = product.discountPercentage > 0 ? 
+            '<div class="position-absolute top-0 start-0 m-2">' +
+                '<span class="badge bg-danger">' + product.discountPercentage + '% OFF</span>' +
+            '</div>' : '';
+        
+        const outOfStockBadge = product.stock === 0 ? 
+            '<div class="position-absolute top-0 end-0 m-2">' +
+                '<span class="badge bg-secondary">Out of Stock</span>' +
+            '</div>' : '';
+        
+        const originalPrice = product.discountPercentage > 0 ? 
+            '<span class="text-decoration-line-through text-muted ms-2">' +
+                '₹' + (product.price * (1 + product.discountPercentage/100)).toFixed(2) +
+            '</span>' : '';
+        
+        productCard.innerHTML = 
+            '<div class="card h-100 shadow-sm hover-shadow">' +
+                '<div class="position-relative">' +
+                    '<img src="' + (product.images && product.images.length > 0 ? product.images[0] : 'https://via.placeholder.com/300x200?text=No+Image') + '" ' +
+                        'class="card-img-top" ' +
+                        'alt="' + product.name + '" ' +
+                        'style="height: 200px; object-fit: cover;" ' +
+                        'onerror="this.src=\'https://via.placeholder.com/300x200?text=Image+Not+Found\'">' +
+                    discountBadge +
+                    outOfStockBadge +
+                '</div>' +
+                '<div class="card-body">' +
+                    '<h5 class="card-title text-truncate">' + product.name + '</h5>' +
+                    '<p class="card-text text-truncate">' + product.description + '</p>' +
+                    '<div class="d-flex justify-content-between align-items-center">' +
+                        '<div>' +
+                            '<span class="h5 mb-0">₹' + product.price.toFixed(2) + '</span>' +
+                            originalPrice +
+                        '</div>' +
+                        '<div class="rating">' + ratingStars + '</div>' +
+                    '</div>' +
+                    '<div class="mt-2">' +
+                        '<small class="text-muted">' +
+                            '<i class="fas fa-store me-1"></i>' +
+                            (product.brand || 'Unbranded') +
+                        '</small>' +
+                    '</div>' +
+                    '<button class="btn btn-primary add-to-cart mt-2 w-100" ' +
+                        'data-product-id="' + product._id + '" ' +
+                        'data-product-name="' + product.name + '" ' +
+                        'data-product-price="' + product.price + '" ' +
+                        'data-product-image="' + (product.images && product.images.length > 0 ? product.images[0] : 'https://via.placeholder.com/300x200?text=No+Image') + '">' +
+                        '<i class="fas fa-shopping-cart me-2"></i>Add to Cart' +
+                    '</button>' +
+                '</div>' +
+            '</div>';
+        
+        // Append the product card to the fragment
+        fragment.appendChild(productCard);
+    });
+    
+    // Append the fragment to the products grid
+    productsGrid.appendChild(fragment);
+}
+
+// Update category filter logic
+document.addEventListener('DOMContentLoaded', () => {
+    const allCategoryCheckbox = document.getElementById('allCategories');
+    const categoryCheckboxes = document.querySelectorAll('.category-checkbox:not([value="all"])');
+
+    allCategoryCheckbox.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            categoryCheckboxes.forEach(cb => {
+                cb.checked = false;
+            });
+        }
+        updateCategories();
+    });
+
+    categoryCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            const anyChecked = Array.from(categoryCheckboxes).some(cb => cb.checked);
+            allCategoryCheckbox.checked = !anyChecked;
+            updateCategories();
+        });
+    });
+
+    function updateCategories() {
+        const selectedCategories = Array.from(document.querySelectorAll('.category-checkbox:checked'))
+            .map(cb => cb.value)
+            .filter(value => value !== 'all');
+        productFilter.updateCategories(selectedCategories);
+        debouncedUpdate();
+    }
+
+    // Rating filter logic
+    const ratingRadios = document.querySelectorAll('.rating-radio');
+    const ratingStars = document.querySelectorAll('.rating-star');
+    const ratingText = document.querySelector('.rating-text');
+
+    ratingRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const rating = parseInt(e.target.value);
+            updateRatingDisplay(rating, ratingStars, ratingText);
+            productFilter.updateRating(rating);
+            debouncedUpdate();
+        });
+    });
+
+    // Seller rating filter logic
+    const sellerRatingRadios = document.querySelectorAll('.seller-rating-radio');
+    const sellerRatingStars = document.querySelectorAll('.seller-rating-star');
+    const sellerRatingText = document.querySelector('.seller-rating-text');
+
+    sellerRatingRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const rating = parseInt(e.target.value);
+            updateRatingDisplay(rating, sellerRatingStars, sellerRatingText, 'Seller');
+            productFilter.updateSellerRating(rating);
+            debouncedUpdate();
+        });
+    });
+
+    function updateRatingDisplay(rating, stars, textElement, type = '') {
+        stars.forEach((star, index) => {
+            star.className = `fas fa-star ${index < rating ? 'text-warning' : 'text-muted'}`;
+        });
+        textElement.textContent = rating === 0 ? 
+            `All ${type} Ratings` : 
+            `${rating}★ & Up`;
+    }
+});
+</script>

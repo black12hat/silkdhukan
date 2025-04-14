@@ -1,0 +1,236 @@
+<%- contentFor('body') %>
+<div class="container py-5">
+    <h1 class="mb-4">Shopping Cart</h1>
+    
+    <% if (!user || user.role !== 'buyer') { %>
+        <div class="alert alert-warning">
+            Please <a href="/login?redirect=/cart">login</a> as a buyer to view your cart.
+        </div>
+    <% } else { %>
+        <div class="row">
+            <!-- Cart Items -->
+            <div class="col-md-8">
+                <div id="cart-container">
+                    <% if (cart.items.length === 0) { %>
+                        <div class="text-center py-5">
+                            <h3>Your cart is empty</h3>
+                            <p>Add some products to your cart to get started!</p>
+                            <a href="/prod" class="btn btn-primary mt-3">
+                                Browse Products
+                            </a>
+                        </div>
+                    <% } else { %>
+                        <% cart.items.forEach(item => { %>
+                            <div class="card mb-3" id="cart-item-<%= item._id %>">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-2">
+                                            <img src="<%= item.productImage || '/images/placeholder.png' %>" 
+                                                 alt="<%= item.productName %>"
+                                                 class="img-fluid rounded"
+                                                 style="width: 80px; height: 80px; object-fit: cover;">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <h5 class="card-title mb-1"><%= item.productName %></h5>
+                                            <p class="text-muted mb-0">₹<%= item.productPrice.toFixed(2) %> each</p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="input-group" style="max-width: 150px;">
+                                                <button class="btn btn-outline-secondary" 
+                                                        onclick="cart.updateQuantity('<%= item._id %>', <%= item.quantity - 1 %>)"
+                                                        <%= item.quantity <= 1 ? 'disabled' : '' %>>
+                                                    -
+                                                </button>
+                                                <input type="number" class="form-control text-center" 
+                                                       value="<%= item.quantity %>" min="1" max="99"
+                                                       onchange="cart.updateQuantity('<%= item._id %>', this.value)">
+                                                <button class="btn btn-outline-secondary" 
+                                                        onclick="cart.updateQuantity('<%= item._id %>', <%= item.quantity + 1 %>)">
+                                                    +
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2 text-end">
+                                            <button class="btn btn-outline-danger btn-sm" 
+                                                    onclick="cart.removeItem('<%= item._id %>')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-md-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">Order Summary</h5>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">₹<%= cart.totalAmount.toFixed(2) %></span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-3">
+                            <strong>Total:</strong>
+                            <strong id="total">₹<%= cart.totalAmount.toFixed(2) %></strong>
+                        </div>
+                        <button class="btn btn-primary w-100" id="checkout-btn" onclick="window.location.href='/checkout'" <%= cart.items.length === 0 ? 'disabled' : '' %>>
+                            Proceed to Checkout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <% } %>
+</div>
+
+<script>
+const cart = {
+    async loadCart() {
+        try {
+            const response = await fetch('/api/cart', {
+                credentials: 'include'
+            });
+            if (!response.ok) throw new Error('Failed to load cart');
+            
+            const { data } = await response.json();
+            const container = document.getElementById('cart-container');
+            const checkoutBtn = document.getElementById('checkout-btn');
+            
+            if (!data.items || data.items.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <h3>Your cart is empty</h3>
+                        <p>Add some products to your cart to get started!</p>
+                        <a href="/prod" class="btn btn-primary mt-3">
+                            Browse Products
+                        </a>
+                    </div>
+                `;
+                this.updateSummary(0);
+                checkoutBtn.disabled = true;
+                return;
+            }
+
+            // Enable checkout button if cart has items
+            checkoutBtn.disabled = false;
+
+            // Update cart items
+            container.innerHTML = data.items.map(item => `
+                <div class="card mb-3" id="cart-item-${item._id}">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                <img src="${item.productImage || '/images/placeholder.png'}" 
+                                     alt="${item.productName}"
+                                     class="img-fluid rounded"
+                                     style="width: 80px; height: 80px; object-fit: cover;">
+                            </div>
+                            <div class="col-md-4">
+                                <h5 class="card-title mb-1">${item.productName}</h5>
+                                <p class="text-muted mb-0">₹${item.productPrice.toFixed(2)} each</p>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="input-group" style="max-width: 150px;">
+                                    <button class="btn btn-outline-secondary" 
+                                            onclick="cart.updateQuantity('${item._id}', ${item.quantity - 1})"
+                                            ${item.quantity <= 1 ? 'disabled' : ''}>
+                                        -
+                                    </button>
+                                    <input type="number" class="form-control text-center" 
+                                           value="${item.quantity}" min="1" max="99"
+                                           onchange="cart.updateQuantity('${item._id}', this.value)">
+                                    <button class="btn btn-outline-secondary" 
+                                            onclick="cart.updateQuantity('${item._id}', ${item.quantity + 1})">
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <button class="btn btn-outline-danger btn-sm" 
+                                        onclick="cart.removeItem('${item._id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Update summary
+            this.updateSummary(data.totalAmount);
+        } catch (error) {
+            console.error('Error loading cart:', error);
+            document.getElementById('cart-container').innerHTML = `
+                <div class="alert alert-danger">
+                    Error loading cart. Please try again.
+                </div>
+            `;
+        }
+    },
+
+    updateSummary(total) {
+        const formattedTotal = total.toFixed(2);
+        document.getElementById('subtotal').textContent = `₹${formattedTotal}`;
+        document.getElementById('total').textContent = `₹${formattedTotal}`;
+    },
+
+    async updateQuantity(itemId, newQuantity) {
+        try {
+            newQuantity = parseInt(newQuantity);
+            if (newQuantity < 1 || newQuantity > 99) return;
+
+            const response = await fetch(`/api/cart/${itemId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ quantity: newQuantity })
+            });
+
+            if (!response.ok) throw new Error('Failed to update quantity');
+            
+            // Reload cart to show updated state
+            await this.loadCart();
+        } catch (error) {
+            console.error('Error updating quantity:', error);
+            alert('Failed to update quantity. Please try again.');
+        }
+    },
+
+    async removeItem(itemId) {
+        try {
+            const response = await fetch(`/api/cart/${itemId}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            if (!response.ok) throw new Error('Failed to remove item');
+
+            // Remove the item from DOM and update cart
+            document.getElementById(`cart-item-${itemId}`).remove();
+            await this.loadCart();
+        } catch (error) {
+            console.error('Error removing item:', error);
+            alert('Failed to remove item. Please try again.');
+        }
+    }
+};
+
+// Load cart when page loads
+document.addEventListener('DOMContentLoaded', () => cart.loadCart());
+</script>
+
+<%- contentFor('style') %>
+<style>
+.input-group .form-control {
+    text-align: center;
+}
+.input-group .btn {
+    z-index: 0;
+}
+</style>

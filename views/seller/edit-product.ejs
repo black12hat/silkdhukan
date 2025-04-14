@@ -1,0 +1,257 @@
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Edit Product</h1>
+            <p class="text-muted">Update your product details</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form id="editProductForm" method="POST" enctype="multipart/form-data">
+                <!-- Basic Information -->
+                <div class="mb-3">
+                    <label for="productName" class="form-label">Product Name *</label>
+                    <input type="text" class="form-control" id="productName" name="name" value="<%= product.name %>" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="productDescription" class="form-label">Description *</label>
+                    <textarea class="form-control" id="productDescription" name="description" rows="3" required><%= product.description %></textarea>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="productPrice" class="form-label">Price (₹) *</label>
+                            <input type="number" class="form-control" id="productPrice" name="price" min="0" step="0.01" value="<%= product.price %>" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="productStock" class="form-label">Stock *</label>
+                            <input type="number" class="form-control" id="productStock" name="stock" min="0" value="<%= product.stock %>" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="productCategory" class="form-label">Category *</label>
+                            <select class="form-select" id="productCategory" name="category" required>
+                                <option value="">Select Category</option>
+                                <% ['Kanchipuram Silks', 'Mysore Silk', 'Banarasi Silk', 'Patola Silk', 'Tussar Silk', 'Ahimsa Silk'].forEach(cat => { %>
+                                    <option value="<%= cat %>" <%= product.category === cat ? 'selected' : '' %>><%= cat %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="minOrderQuantity" class="form-label">Minimum Order Quantity *</label>
+                            <input type="number" class="form-control" id="minOrderQuantity" name="minOrderQuantity" min="1" value="<%= product.minOrderQuantity %>" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Current Images -->
+                <div class="mb-3">
+                    <label class="form-label">Current Images</label>
+                    <div class="row g-2" id="currentImages">
+                        <% product.images.forEach((image, index) => { %>
+                            <div class="col-md-3 position-relative">
+                                <div class="card">
+                                    <img src="<%= image %>" class="card-img-top" alt="Product image <%= index + 1 %>" style="height: 150px; object-fit: cover;">
+                                    <div class="card-body p-2">
+                                        <button type="button" class="btn btn-sm btn-danger w-100 remove-image" data-image="<%= image %>">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                        <input type="hidden" name="existingImages[]" value="<%= image %>">
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+
+                <!-- New Images -->
+                <div class="mb-3">
+                    <label for="productImages" class="form-label">Add New Images</label>
+                    <input type="file" class="form-control" id="productImages" name="images" multiple accept="image/*">
+                    <div id="imagePreview" class="mt-2 d-flex flex-wrap gap-2"></div>
+                </div>
+                
+                <!-- Specifications -->
+                <div class="mb-3">
+                    <label class="form-label">Specifications</label>
+                    <div id="specificationsContainer">
+                        <% Object.entries(product.specifications || {}).forEach(([key, value]) => { %>
+                            <div class="specification-row row mb-2">
+                                <div class="col-5">
+                                    <input type="text" class="form-control" name="specKey[]" value="<%= key %>" placeholder="Key">
+                                </div>
+                                <div class="col-5">
+                                    <input type="text" class="form-control" name="specValue[]" value="<%= value %>" placeholder="Value">
+                                </div>
+                                <div class="col-2">
+                                    <button type="button" class="btn btn-outline-danger remove-spec"><i class="fas fa-minus"></i></button>
+                                </div>
+                            </div>
+                        <% }); %>
+                    </div>
+                    <button type="button" class="btn btn-outline-primary mt-2" id="addSpecification">
+                        <i class="fas fa-plus"></i> Add Specification
+                    </button>
+                </div>
+                
+                <!-- Shipping Information -->
+                <div class="mb-3">
+                    <label class="form-label">Shipping Information</label>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="shippingWeight" class="form-label">Weight (g)</label>
+                                <input type="number" class="form-control" id="shippingWeight" 
+                                       name="shippingInfo[weight]" min="0"
+                                       value="<%= product.shippingInfo?.weight || '' %>">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Dimensions (cm)</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" 
+                                           name="shippingInfo[dimensions][length]" 
+                                           placeholder="Length" min="0"
+                                           value="<%= product.shippingInfo?.dimensions?.length || '' %>">
+                                    <input type="number" class="form-control" 
+                                           name="shippingInfo[dimensions][width]" 
+                                           placeholder="Width" min="0"
+                                           value="<%= product.shippingInfo?.dimensions?.width || '' %>">
+                                    <input type="number" class="form-control" 
+                                           name="shippingInfo[dimensions][height]" 
+                                           placeholder="Height" min="0"
+                                           value="<%= product.shippingInfo?.dimensions?.height || '' %>">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="/seller/products" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Update Product</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle specification rows
+    document.getElementById('addSpecification').addEventListener('click', function() {
+        const container = document.getElementById('specificationsContainer');
+        const newRow = document.createElement('div');
+        newRow.className = 'specification-row row mb-2';
+        newRow.innerHTML = `
+            <div class="col-5">
+                <input type="text" class="form-control" name="specKey[]" placeholder="Key">
+            </div>
+            <div class="col-5">
+                <input type="text" class="form-control" name="specValue[]" placeholder="Value">
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-outline-danger remove-spec"><i class="fas fa-minus"></i></button>
+            </div>
+        `;
+        container.appendChild(newRow);
+    });
+
+    // Remove specification row
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-spec')) {
+            e.target.closest('.specification-row').remove();
+        }
+    });
+
+    // Remove image
+    document.querySelectorAll('.remove-image').forEach(button => {
+        button.addEventListener('click', function() {
+            const imageContainer = this.closest('.col-md-3');
+            imageContainer.remove();
+        });
+    });
+
+    // Form submission
+    document.getElementById('editProductForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        
+        try {
+            // Get all existing images that weren't removed
+            const existingImages = Array.from(document.querySelectorAll('input[name="existingImages[]"]')).map(input => input.value);
+            formData.append('existingImages', JSON.stringify(existingImages));
+            
+            // Get specifications
+            const specKeys = formData.getAll('specKey[]');
+            const specValues = formData.getAll('specValue[]');
+            const specifications = {};
+            specKeys.forEach((key, index) => {
+                if (key && specValues[index]) {
+                    specifications[key] = specValues[index];
+                }
+            });
+            formData.append('specifications', JSON.stringify(specifications));
+            
+            // Get shipping info
+            const shippingInfo = {
+                weight: formData.get('shippingInfo[weight]'),
+                dimensions: {
+                    length: formData.get('shippingInfo[dimensions][length]'),
+                    width: formData.get('shippingInfo[dimensions][width]'),
+                    height: formData.get('shippingInfo[dimensions][height]')
+                }
+            };
+            formData.append('shippingInfo', JSON.stringify(shippingInfo));
+            
+            // Remove individual shipping fields to avoid duplication
+            formData.delete('shippingInfo[weight]');
+            formData.delete('shippingInfo[dimensions][length]');
+            formData.delete('shippingInfo[dimensions][width]');
+            formData.delete('shippingInfo[dimensions][height]');
+            
+            // Remove individual spec fields
+            formData.delete('specKey[]');
+            formData.delete('specValue[]');
+
+            const response = await fetch('/seller/products/<%= product._id %>', {
+                method: 'PUT',
+                headers: {
+                    'Accept': 'application/json'
+                },
+                body: formData
+            });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('Server returned non-JSON response');
+            }
+
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert('Product updated successfully');
+                window.location.href = '/seller/products';
+            } else {
+                throw new Error(result.message || 'Error updating product');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert(error.message || 'An error occurred while updating the product');
+        }
+    });
+});
+</script> 

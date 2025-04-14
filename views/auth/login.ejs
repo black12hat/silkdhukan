@@ -1,0 +1,71 @@
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Login</div>
+            <div class="card-body">
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email address</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </div>
+                    <div id="errorMessage" class="alert alert-danger mt-3" style="display: none;"></div>
+                </form>
+                <div class="mt-3 text-center">
+                    <p>Don't have an account? <a href="/register">Register</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorMessage = document.getElementById('errorMessage');
+    
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Store token in localStorage
+            localStorage.setItem('token', data.user.token);
+            localStorage.setItem('companyName', data.user.companyName);
+            localStorage.setItem('userRole', data.user.role);
+            
+            // Redirect based on user role
+            if (data.user.role === 'buyer') {
+                window.location.href = '/prod';
+            } else if (data.user.role === 'seller') {
+                window.location.href = '/seller/dashboard';
+            } else {
+                window.location.href = '/';
+            }
+        } else {
+            errorMessage.textContent = data.message;
+            errorMessage.style.display = 'block';
+        }
+    } catch (error) {
+        errorMessage.textContent = 'An error occurred. Please try again.';
+        errorMessage.style.display = 'block';
+    }
+});
+</script>

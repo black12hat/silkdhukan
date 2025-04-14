@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sent Messages - B2B Escrow</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <%- include('../partials/sidebar') %>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Sent Messages</h1>
+                </div>
+
+                <!-- Messages List -->
+                <div class="card">
+                    <div class="card-body">
+                        <% if (messages.length === 0) { %>
+                            <div class="text-center py-5">
+                                <i class="fas fa-paper-plane fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No sent messages</p>
+                            </div>
+                        <% } else { %>
+                            <div class="list-group">
+                                <% messages.forEach(message => { %>
+                                    <a href="/messages/<%= message._id %>" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h5 class="mb-1"><%= message.subject %></h5>
+                                            <small class="text-muted">
+                                                <%= new Date(message.createdAt).toLocaleDateString() %>
+                                            </small>
+                                        </div>
+                                        <p class="mb-1"><%= message.content.substring(0, 100) %>...</p>
+                                        <small class="text-muted">To: <%= message.recipient.companyName %></small>
+                                    </a>
+                                <% }); %>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

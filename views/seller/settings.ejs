@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | B2B Escrow Marketplace</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 main-content p-4">
+                <div class="profile-section">
+                    <div class="profile-header">
+                        <h2><i class="fas fa-cog"></i> Account Settings</h2>
+                        <p class="mb-0">Manage your account preferences and security settings</p>
+                    </div>
+
+                    <div class="p-4">
+                        <!-- Alert Messages -->
+                        <div class="alert alert-success d-none" id="successAlert">
+                            Settings updated successfully!
+                        </div>
+                        <div class="alert alert-danger d-none" id="errorAlert">
+                            Error updating settings. Please try again.
+                        </div>
+
+                        <!-- Settings Form -->
+                        <form id="settingsForm">
+                            <!-- Account Security -->
+                            <div class="mb-4">
+                                <h5 class="mb-3" style="color: var(--primary);">Account Security</h5>
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="currentPassword" class="form-label">Current Password</label>
+                                            <input type="password" class="form-control" id="currentPassword" name="currentPassword" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="newPassword" class="form-label">New Password</label>
+                                            <input type="password" class="form-control" id="newPassword" name="newPassword">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Notification Settings -->
+                            <div class="mb-4">
+                                <h5 class="mb-3" style="color: var(--primary);">Notification Preferences</h5>
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="emailNotif" name="emailNotifications" value="true" <%= seller.settings?.emailNotifications ? 'checked' : '' %>>
+                                            <label class="form-check-label" for="emailNotif">
+                                                Email Notifications
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="smsNotif" name="smsNotifications" value="true" <%= seller.settings?.smsNotifications ? 'checked' : '' %>>
+                                            <label class="form-check-label" for="smsNotif">
+                                                SMS Notifications
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="orderUpdates" name="orderUpdates" value="true" <%= seller.settings?.orderUpdates ? 'checked' : '' %>>
+                                            <label class="form-check-label" for="orderUpdates">
+                                                Order Updates
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="marketingEmails" name="marketingEmails" value="true" <%= seller.settings?.marketingEmails ? 'checked' : '' %>>
+                                            <label class="form-check-label" for="marketingEmails">
+                                                Marketing Emails
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Payment Settings -->
+                            <div class="mb-4">
+                                <h5 class="mb-3" style="color: var(--primary);">Payment Settings</h5>
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="bankName" class="form-label">Bank Name</label>
+                                            <input type="text" class="form-control" id="bankName" name="bankName" value="<%= seller.paymentSettings?.bankName || '' %>">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="accountNumber" class="form-label">Account Number</label>
+                                            <input type="text" class="form-control" id="accountNumber" name="accountNumber" value="<%= seller.paymentSettings?.accountNumber || '' %>">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="ifscCode" class="form-label">IFSC Code</label>
+                                            <input type="text" class="form-control" id="ifscCode" name="ifscCode" value="<%= seller.paymentSettings?.ifscCode || '' %>">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Privacy Settings -->
+                            <div class="mb-4">
+                                <h5 class="mb-3" style="color: var(--primary);">Privacy Settings</h5>
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="profileVisibility" name="profileVisibility" value="true" <%= seller.settings?.profileVisibility ? 'checked' : '' %>>
+                                            <label class="form-check-label" for="profileVisibility">
+                                                Make profile visible to other users
+                                            </label>
+                                        </div>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="showContactInfo" name="showContactInfo" value="true" <%= seller.settings?.showContactInfo ? 'checked' : '' %>>
+                                            <label class="form-check-label" for="showContactInfo">
+                                                Show contact information publicly
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Settings
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('settingsForm');
+            const successAlert = document.getElementById('successAlert');
+            const errorAlert = document.getElementById('errorAlert');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData.entries());
+
+                // Password validation
+                const newPassword = data.newPassword;
+                const confirmPassword = data.confirmPassword;
+
+                if (newPassword && newPassword !== confirmPassword) {
+                    showError('New passwords do not match');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/seller/settings', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showSuccess('Settings updated successfully');
+                        // Clear password fields
+                        form.querySelector('#currentPassword').value = '';
+                        form.querySelector('#newPassword').value = '';
+                        form.querySelector('#confirmPassword').value = '';
+                    } else {
+                        showError(result.message || 'Error updating settings');
+                    }
+                } catch (error) {
+                    showError('Error updating settings. Please try again.');
+                }
+            });
+
+            function showSuccess(message) {
+                successAlert.textContent = message;
+                successAlert.classList.remove('d-none');
+                errorAlert.classList.add('d-none');
+                setTimeout(() => successAlert.classList.add('d-none'), 3000);
+            }
+
+            function showError(message) {
+                errorAlert.textContent = message;
+                errorAlert.classList.remove('d-none');
+                successAlert.classList.add('d-none');
+                setTimeout(() => errorAlert.classList.add('d-none'), 3000);
+            }
+        });
+    </script>
+</body>
+</html> 

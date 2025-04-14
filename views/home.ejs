@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SilkDhukan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Open+Sans&display=swap" rel="stylesheet">
+    <style>
+        /* Global Styles */
+        body {
+            background-color: #FAF3E0;
+            color: #3B2F2F;
+            font-family: 'Open Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        h1, h2, h5 {
+            font-family: 'Merriweather', serif;
+        }
+
+        /* Jumbotron Section */
+        .jumbotron {
+            background: linear-gradient(145deg, #FAF3E0, #FAF3E0);  
+            color: #3b2f2f;     ;
+            padding: 4rem 2rem;
+            text-align: center;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .display-4 {
+            font-size: 3rem;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background-color: #5A3E2B;
+            color: #FAF3E0;
+            border: none;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            transition: background-color 0.3s ease-in-out;
+        }
+
+        .btn-primary:hover {
+            background-color: #D4AF37;
+            color: #3B2F2F;
+        }
+
+        /* Card Styles */
+        .card {
+            background-color: #F5E6CC;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .card-title {
+            color: #3B2F2F;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .btn-outline-primary {
+            border: 2px solid #5A3E2B;
+            color: #5A3E2B;
+            border-radius: 12px;
+            padding: 0.5rem 1rem;
+            transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: #D4AF37;
+            color: #3B2F2F;
+        }
+
+        /* How It Works Section */
+        .how-it-works h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .how-it-works .card {
+            padding: 2rem;
+        }
+
+        .how-it-works .row {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .how-it-works .h1 {
+            background-color: #D4AF37;
+            color: #3B2F2F;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem auto;
+        }
+
+        .how-it-works h5 {
+            margin-top: 1rem;
+            font-size: 1.25rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .display-4 {
+                font-size: 2.5rem;
+            }
+
+            .how-it-works .col-md-3 {
+                flex: 1 1 100%;
+                margin-bottom: 1.5rem;
+            }
+
+            .jumbotron {
+                padding: 2rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Jumbotron Section -->
+    <div class="jumbotron">
+        <h1 class="display-4">SilkDhukan</h1>
+        <p class="lead">Secure transactions for businesses with our escrow payment system.</p>
+        <hr class="my-4">
+        <p>Buy and sell with confidence using our secure escrow service that protects both buyers and sellers.</p>
+        <a class="btn btn-primary btn-lg" href="/prod" role="button">Browse Products</a>
+    </div>
+
+    <!-- Info Cards Section -->
+    <div class="row mt-5">
+        <!-- For Buyers -->
+        <% if (!user || user.role !== 'seller') { %>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">For Buyers</h5>
+                    <p class="card-text">Find trusted suppliers and make secure purchases with our escrow protection.</p>
+                    <% if (!user) { %>
+                        <a href="/register?role=buyer" class="btn btn-outline-primary">Register as Buyer</a>
+                    <% } else if (user.role === 'buyer') { %>
+                        <a href="/prod" class="btn btn-outline-primary">Browse Products</a>
+                    <% } else { %>
+                        <a href="/register?role=buyer" class="btn btn-outline-primary">Register as Buyer</a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- For Sellers -->
+        <% if (!user || user.role !== 'buyer') { %>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">For Sellers</h5>
+                    <p class="card-text">Reach more customers and receive secure payments for your products.</p>
+                    <% if (!user) { %>
+                        <a href="/register?role=seller" class="btn btn-outline-primary">Register as Seller</a>
+                    <% } else if (user.role === 'seller') { %>
+                        <a href="/seller/dashboard" class="btn btn-outline-primary">Go to Dashboard</a>
+                    <% } else { %>
+                        <a href="/register?role=seller" class="btn btn-outline-primary">Register as Seller</a>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- Escrow Protection -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Escrow Protection</h5>
+                    <p class="card-text">Our escrow system holds payment until both parties are satisfied.</p>
+                    <a href="/about-escrow" class="btn btn-outline-primary">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Section -->
+    <div class="row mt-5 how-it-works">
+        <div class="col-12">
+            <h2>How It Works</h2>
+            <div class="card mt-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <div class="h1">1</div>
+                            <h5>Buyer places order</h5>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="h1">2</div>
+                            <h5>Buyer funds escrow</h5>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="h1">3</div>
+                            <h5>Seller ships goods</h5>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="h1">4</div>
+                            <h5>Buyer releases funds</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

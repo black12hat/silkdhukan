@@ -1,0 +1,183 @@
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Seller Dashboard</h2>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Total Products</h6>
+                    <h2 class="card-title mb-0"><%= locals.stats?.totalProducts || 0 %></h2>
+                    <div class="mt-2">
+                        <a href="/seller/products" class="btn btn-sm btn-outline-primary">View Products</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Pending Orders</h6>
+                    <h2 class="card-title mb-0"><%= locals.stats?.pendingOrders || 0 %></h2>
+                    <div class="mt-2">
+                        <a href="/seller/orders?status=pending" class="btn btn-sm btn-outline-warning">View Orders</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Total Sales</h6>
+                    <h2 class="card-title mb-0">₹<%= locals.stats?.totalSales?.toFixed(2) || '0.00' %></h2>
+                    <div class="mt-2">
+                        <a href="/seller/transactions" class="btn btn-sm btn-outline-success">View Transactions</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Unread Messages</h6>
+                    <h2 class="card-title mb-0"><%= locals.unreadMessages || 0 %></h2>
+                    <div class="mt-2">
+                        <a href="/seller/messages" class="btn btn-sm btn-outline-info">View Messages</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Orders</h5>
+                    <a href="/seller/orders" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <% if (locals.recentOrders && recentOrders.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>Buyer</th>
+                                        <th>Product</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% recentOrders.forEach(order => { %>
+                                        <tr>
+                                            <td><%= order._id %></td>
+                                            <td><%= order.buyer.companyName %></td>
+                                            <td><%= order.product.name %></td>
+                                            <td>₹<%= order.amount.toFixed(2) %></td>
+                                            <td>
+                                                <span class="badge bg-<%= order.status === 'pending' ? 'warning' : order.status === 'completed' ? 'success' : 'danger' %>">
+                                                    <%= order.status %>
+                                                </span>
+                                            </td>
+                                            <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
+                                            <td>
+                                                <a href="/seller/orders/<%= order._id %>" class="btn btn-sm btn-outline-primary">View</a>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %>
+                        <p class="text-muted mb-0">No recent orders found.</p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="/seller/products" class="btn btn-primary w-100">
+                                <i class="fas fa-plus"></i> Add New Product
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/seller/messages/compose" class="btn btn-info w-100">
+                                <i class="fas fa-envelope"></i> Send Message
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/seller/analytics" class="btn btn-success w-100">
+                                <i class="fas fa-chart-line"></i> View Analytics
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/seller/settings" class="btn btn-secondary w-100">
+                                <i class="fas fa-cog"></i> Settings
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .card-header {
+        background-color: #fff;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        padding: 1rem 1.25rem;
+    }
+
+    .btn-primary {
+        background-color: var(--primary);
+        border-color: var(--primary);
+    }
+
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+        border-color: var(--primary-dark);
+    }
+
+    .btn-outline-primary {
+        color: var(--primary);
+        border-color: var(--primary);
+    }
+
+    .btn-outline-primary:hover {
+        background-color: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+    }
+</style> 
