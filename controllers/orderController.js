@@ -34,6 +34,12 @@ exports.createOrder = async (req, res) => {
             receipt: `order_${Date.now()}`
         });
 
+        // Ensure phone number is included in delivery address
+        const deliveryAddressWithPhone = {
+            ...deliveryAddress,
+            phone: deliveryAddress.phone || 'Not provided' // Fallback if phone is not provided
+        };
+
         // Create order in database
         const order = await Order.create({
             buyerId: req.user.id,
@@ -42,7 +48,7 @@ exports.createOrder = async (req, res) => {
             productName: product.name,
             quantity,
             amount,
-            deliveryAddress,
+            deliveryAddress: deliveryAddressWithPhone,
             razorpayOrderId: razorpayOrder.id,
             paymentStatus: 'pending',
             escrowStatus: null,
@@ -216,25 +222,29 @@ exports.updateDeliveryStatus = async (req, res) => {
 // @access  Private
 exports.getOrderById = async (req, res) => {
   try {
+    if (!req.session?.userId) {
+      return res.status(401).json({ success: false, message: 'Please log in to view order details' });
+    }
+
     const order = await Order.findById(req.params.id)
-      .populate('buyer', 'companyName email')
-      .populate('seller', 'companyName email')
-      .populate('items.product', 'name images');
+      .populate('buyerId', 'firstName lastName email')
+      .populate('sellerId', 'companyName email')
+      .populate('productId', 'name images');
     
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
     
     // Make sure user is buyer or seller
-    if (order.buyer._id.toString() !== req.user.id && 
-        order.seller._id.toString() !== req.user.id && 
-        req.user.role !== 'admin') {
+    if (order.buyerId._id.toString() !== req.session.userId && 
+        order.sellerId._id.toString() !== req.session.userId) {
       return res.status(401).json({ success: false, message: 'Not authorized to view this order' });
     }
     
     res.json({ success: true, data: order });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Error getting order:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch order details' });
   }
 };
 

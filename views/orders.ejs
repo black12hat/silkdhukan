@@ -405,18 +405,33 @@ function getStatusBadgeClass(status) {
 
 async function viewOrderDetails(orderId) {
     try {
+        // Show loading state
+        const loadingModal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+        document.getElementById('modalOrderId').textContent = 'Loading...';
+        loadingModal.show();
+
         const response = await fetch(`/api/orders/${orderId}`, {
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json'
+            }
         });
+
         const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.message || 'Failed to load order details');
+        }
 
         if (result.success) {
             const order = result.data;
             
             // Update modal content
-            document.getElementById('modalOrderId').textContent = order.orderId;
-            document.getElementById('modalOrderDate').textContent = new Date(order.createdAt).toLocaleString();
-            document.getElementById('modalOrderAmount').textContent = `₹${(order.amount / 100).toFixed(2)}`;
+            document.getElementById('modalOrderId').textContent = order.orderId || 'N/A';
+            document.getElementById('modalOrderDate').textContent = order.createdAt ? new Date(order.createdAt).toLocaleString() : 'N/A';
+            document.getElementById('modalOrderAmount').textContent = order.amount ? `₹${(order.amount / 100).toFixed(2)}` : 'N/A';
+
+            // Update status badges
             document.getElementById('modalOrderStatus').textContent = formatStatus(order.deliveryStatus);
             document.getElementById('modalPaymentStatus').textContent = formatStatus(order.paymentStatus);
             document.getElementById('modalEscrowStatus').textContent = formatStatus(order.escrowStatus);
@@ -424,47 +439,71 @@ async function viewOrderDetails(orderId) {
 
             // Update product details
             document.getElementById('modalProductDetails').innerHTML = `
-                <p><strong>Name:</strong> ${order.productName}</p>
-                <p><strong>Price:</strong> ₹${(order.amount / 100).toFixed(2)}</p>
-                <p><strong>Quantity:</strong> ${order.quantity}</p>
+                <p><strong>Name:</strong> ${order.productName || 'N/A'}</p>
+                <p><strong>Price:</strong> ${order.amount ? `₹${(order.amount / 100).toFixed(2)}` : 'N/A'}</p>
+                <p><strong>Quantity:</strong> ${order.quantity || 'N/A'}</p>
             `;
 
             // Update delivery address
-            const address = order.deliveryAddress;
+            const address = order.deliveryAddress || {};
             document.getElementById('modalDeliveryAddress').innerHTML = `
-                <p><strong>Name:</strong> ${address.name}</p>
-                <p><strong>Phone:</strong> ${address.phone}</p>
-                <p><strong>Address:</strong> ${address.address}</p>
-                <p><strong>State:</strong> ${address.state}</p>
-                <p><strong>Pincode:</strong> ${address.pincode}</p>
-                <p><strong>Country:</strong> ${address.country}</p>
+                <div class="mb-3">
+                    <p class="mb-2"><strong>Name:</strong> ${address.name || 'N/A'}</p>
+                    <p class="mb-2"><strong>Phone:</strong> ${address.phone || 'N/A'}</p>
+                </div>
+                <div class="mb-3">
+                    <p class="mb-2"><strong>Address:</strong> ${address.address || 'N/A'}</p>
+                    <p class="mb-2"><strong>State:</strong> ${address.state || 'N/A'}</p>
+                    <p class="mb-2"><strong>Pincode:</strong> ${address.pincode || 'N/A'}</p>
+                    <p class="mb-0"><strong>Country:</strong> ${address.country || 'N/A'}</p>
+                </div>
             `;
 
-            // Show/hide action buttons based on order status
-            const confirmDeliveryBtn = document.getElementById('confirmDeliveryBtn');
-            const raiseDisputeBtn = document.getElementById('raiseDisputeBtn');
+            // Update action buttons
+            const actionsDiv = document.getElementById('modalActions');
+            actionsDiv.innerHTML = '';
 
             if (order.deliveryStatus === 'delivered' && order.escrowStatus === 'locked') {
-                confirmDeliveryBtn.style.display = 'block';
-                confirmDeliveryBtn.onclick = () => confirmDelivery(orderId);
-            } else {
-                confirmDeliveryBtn.style.display = 'none';
+                actionsDiv.innerHTML += `
+                    <button class="btn btn-success" onclick="confirmDelivery('${order._id}')">
+                        <i class="fas fa-check me-1"></i> Confirm Delivery
+                    </button>
+                `;
             }
 
-            if (order.escrowStatus === 'locked' && order.deliveryStatus !== 'completed') {
-                raiseDisputeBtn.style.display = 'block';
-                raiseDisputeBtn.onclick = () => raiseDispute(orderId);
-            } else {
-                raiseDisputeBtn.style.display = 'none';
+            if (order.escrowStatus === 'locked' && !['completed', 'disputed'].includes(order.deliveryStatus)) {
+                actionsDiv.innerHTML += `
+                    <button class="btn btn-danger ms-2" onclick="raiseDispute('${order._id}')">
+                        <i class="fas fa-exclamation-triangle me-1"></i> Raise Dispute
+                    </button>
+                `;
             }
-
-            $('#orderDetailsModal').modal('show');
         } else {
-            throw new Error(result.message);
+            throw new Error(result.message || 'Failed to load order details');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Failed to load order details. Please try again later.');
+        // Hide the loading modal
+        const modalElement = document.getElementById('orderDetailsModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Show error alert
+        const alertDiv = document.createElement('div');
+        alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+        alertDiv.style.zIndex = '1050';
+        alertDiv.innerHTML = `
+            <strong>Error!</strong> ${error.message || 'Failed to load order details. Please try again later.'}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        // Remove the alert after 5 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
     }
 }
 

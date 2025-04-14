@@ -32,6 +32,8 @@
             <!-- Checkout Form -->
             <div class="col-md-8 order-md-1">
                 <form id="checkoutForm" class="needs-validation" novalidate>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
                     <h4 class="mb-3">Shipping Information</h4>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -56,6 +58,15 @@
                         <div class="invalid-feedback">
                             Please enter a valid email address.
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" pattern="[0-9]{10}" required>
+                        <div class="invalid-feedback">
+                            Please enter a valid 10-digit phone number.
+                        </div>
+                        <small class="text-muted">Format: 10-digit mobile number</small>
                     </div>
 
                     <div class="mb-3">
@@ -117,6 +128,11 @@
     <% } %>
 </div>
 
+<div id="checkoutData" 
+    data-cart-total="<%= cart.totalAmount %>"
+    data-razorpay-key="<%= razorpayKey %>">
+</div>
+
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
 // Form validation
@@ -134,8 +150,13 @@
     }, false);
 })();
 
+// Get values from data attributes
+const checkoutData = document.getElementById('checkoutData');
+const cartTotalAmount = parseFloat(checkoutData.dataset.cartTotal);
+const razorpayKeyFromServer = checkoutData.dataset.razorpayKey;
+
 // Calculate amount in paise
-const amountInPaise = Math.round(<%= cart.totalAmount %> * 100);
+const amountInPaise = Math.round(cartTotalAmount * 100);
 
 // Handle form submission
 document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
@@ -144,9 +165,11 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     const shippingData = {
         name: document.getElementById('firstName').value + ' ' + document.getElementById('lastName').value,
         email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
         address: document.getElementById('address').value,
         state: document.getElementById('state').value,
-        pincode: document.getElementById('zip').value
+        pincode: document.getElementById('zip').value,
+        country: document.getElementById('country').value
     };
 
     try {
@@ -157,56 +180,44 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
             },
             body: JSON.stringify({
                 shipping: shippingData,
-                amount: Math.round(<%= cart.totalAmount %> * 100) // Convert to paise
+                amount: amountInPaise
             })
         });
 
+        if (!response.ok) {
+            throw new Error('Payment creation failed');
+        }
+
         const data = await response.json();
         
-        if (data.success) {
-            const options = {
-                key: data.data.key,
-                amount: data.data.amount,
-                currency: 'INR',
-                name: 'Silk Bazaar',
-                description: 'Order Payment',
-                order_id: data.data.razorpayOrderId,
-                handler: async function(response) {
-                    try {
-                        const verifyResponse = await fetch('/api/payment/verify', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                                orderId: data.data.orderId
-                            })
-                        });
+        // Initialize Razorpay
+        const options = {
+            key: razorpayKeyFromServer,
+            amount: data.amount,
+            currency: 'INR',
+            name: 'B2B Escrow',
+            description: 'Order Payment',
+            order_id: data.id,
+            handler: async function(response) {
+                try {
+                    const verifyResponse = await fetch('/api/payment/verify', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature,
+                            orderId: data.data.orderId
+                        })
+                    });
 
-                        const verifyData = await verifyResponse.json();
-                        
-                        if (verifyData.success) {
-                            window.location.href = '/orders?status=success';
-                        } else {
-                            // Record payment failure
-                            await fetch('/api/payment/failure', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                },
-                                body: JSON.stringify({
-                                    orderId: data.data.orderId,
-                                    reason: verifyData.message || 'Payment verification failed'
-                                })
-                            });
-                            
-                            window.location.href = '/orders?status=failed&message=' + encodeURIComponent(verifyData.message || 'Payment verification failed');
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
+                    const verifyData = await verifyResponse.json();
+                    
+                    if (verifyData.success) {
+                        window.location.href = '/orders?status=success';
+                    } else {
                         // Record payment failure
                         await fetch('/api/payment/failure', {
                             method: 'POST',
@@ -215,34 +226,47 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
                             },
                             body: JSON.stringify({
                                 orderId: data.data.orderId,
-                                reason: 'Payment verification failed'
+                                reason: verifyData.message || 'Payment verification failed'
                             })
                         });
                         
-                        window.location.href = '/orders?status=failed&message=' + encodeURIComponent('Payment verification failed');
+                        window.location.href = '/orders?status=failed&message=' + encodeURIComponent(verifyData.message || 'Payment verification failed');
                     }
-                },
-                prefill: {
-                    name: shippingData.name,
-                    email: shippingData.email
-                },
-                method: {
-                    upi: true,
-                    card: true,
-                    netbanking: true,
-                    wallet: true,
-                    paylater: true
-                },
-                theme: {
-                    color: '#F37254'
+                } catch (error) {
+                    console.error('Error:', error);
+                    // Record payment failure
+                    await fetch('/api/payment/failure', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            orderId: data.data.orderId,
+                            reason: 'Payment verification failed'
+                        })
+                    });
+                    
+                    window.location.href = '/orders?status=failed&message=' + encodeURIComponent('Payment verification failed');
                 }
-            };
+            },
+            prefill: {
+                name: shippingData.name,
+                email: shippingData.email
+            },
+            method: {
+                upi: true,
+                card: true,
+                netbanking: true,
+                wallet: true,
+                paylater: true
+            },
+            theme: {
+                color: '#F37254'
+            }
+        };
 
-            const rzp = new Razorpay(options);
-            rzp.open();
-        } else {
-            alert(data.message || 'Failed to create order');
-        }
+        const rzp = new Razorpay(options);
+        rzp.open();
     } catch (error) {
         console.error('Error:', error);
         alert('Failed to create order');
