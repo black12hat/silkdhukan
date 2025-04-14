@@ -111,15 +111,16 @@ exports.retryPayment = async (req, res) => {
 // @access  Private/Buyer
 exports.verifyPayment = async (req, res) => {
     try {
-        const { razorpay_payment_id, razorpay_signature } = req.body;
-        const order = await Order.findById(req.params.id);
+        const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = req.body;
+        const order = await Order.findById(req.params.id)
+            .populate('sellerId', 'email firstName lastName');
 
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
         // Verify payment signature
-        const body = order.razorpayOrderId + "|" + razorpay_payment_id;
+        const body = razorpay_order_id + "|" + razorpay_payment_id;
         const expectedSignature = crypto
             .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
             .update(body.toString())
@@ -128,18 +129,32 @@ exports.verifyPayment = async (req, res) => {
         if (expectedSignature === razorpay_signature) {
             // Payment successful
             order.paymentStatus = 'success';
+            order.escrowStatus = 'locked'; // Lock funds in escrow
             order.razorpayPaymentId = razorpay_payment_id;
+            order.razorpayOrderId = razorpay_order_id;
             order.razorpaySignature = razorpay_signature;
+            order.deliveryStatus = 'not_shipped'; // Initialize delivery status
+            
+            // Save the updated order
             await order.save();
+
+            // Notify seller about new order
+            await notifySeller(order);
 
             res.json({
                 success: true,
-                message: 'Payment verified successfully'
+                message: 'Payment verified successfully',
+                data: {
+                    orderId: order.orderId,
+                    paymentStatus: order.paymentStatus,
+                    escrowStatus: order.escrowStatus
+                }
             });
         } else {
             // Payment failed
             order.paymentStatus = 'failed';
-            order.failureReason = 'Signature verification failed';
+            order.escrowStatus = null;
+            order.failureReason = 'Payment signature verification failed';
             await order.save();
 
             res.status(400).json({
@@ -264,19 +279,47 @@ exports.getMyOrders = async (req, res) => {
     }
 };
 
-// @desc    Get seller's orders
+// @desc    Get seller's orders with proper status
 // @route   GET /api/orders/sellerorders
 // @access  Private/Seller
 exports.getSellerOrders = async (req, res) => {
-  try {
-    const orders = await Order.find({ seller: req.user.id })
-      .populate('buyer', 'companyName')
-      .sort('-createdAt');
-    
-    res.json({ success: true, count: orders.length, data: orders });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+    try {
+        const orders = await Order.find({ 
+            sellerId: req.user.id,
+            paymentStatus: 'success' // Only show paid orders to seller
+        })
+        .populate('buyerId', 'firstName lastName email')
+        .populate('productId', 'name images price')
+        .sort('-createdAt');
+
+        // Format orders for seller view
+        const formattedOrders = orders.map(order => ({
+            _id: order._id,
+            orderId: order.orderId,
+            productName: order.productName,
+            amount: order.amount,
+            paymentStatus: order.paymentStatus,
+            escrowStatus: order.escrowStatus,
+            deliveryStatus: order.deliveryStatus,
+            createdAt: order.createdAt,
+            buyer: order.buyerId,
+            product: order.productId,
+            deliveryAddress: order.deliveryAddress,
+            quantity: order.quantity
+        }));
+
+        res.json({
+            success: true,
+            count: orders.length,
+            data: formattedOrders
+        });
+    } catch (error) {
+        console.error('Error fetching seller orders:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Failed to fetch seller orders' 
+        });
+    }
 };
 
 // @desc    Update order status
@@ -312,3 +355,23 @@ exports.updateOrderStatus = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// Helper function to notify seller about new order
+async function notifySeller(order) {
+    try {
+        // Here you would typically:
+        // 1. Send email to seller
+        // 2. Create notification in database
+        // 3. Send real-time notification if websockets are implemented
+        
+        // For now, we'll just log it
+        console.log(`New order notification for seller ${order.sellerId._id}:`, {
+            orderId: order.orderId,
+            amount: order.amount,
+            productName: order.productName
+        });
+    } catch (error) {
+        console.error('Error notifying seller:', error);
+        // Don't throw error as this is a non-critical operation
+    }
+}
