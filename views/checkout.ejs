@@ -138,85 +138,114 @@
 const amountInPaise = Math.round(<%= cart.totalAmount %> * 100);
 
 // Handle form submission
-document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    try {
-        const formData = new FormData(this);
-        const shippingData = {
-            firstName: formData.get('firstName'),
-            lastName: formData.get('lastName'),
-            email: formData.get('email'),
-            address: formData.get('address'),
-            country: formData.get('country'),
-            state: formData.get('state'),
-            zip: formData.get('zip')
-        };
+    const shippingData = {
+        name: document.getElementById('firstName').value + ' ' + document.getElementById('lastName').value,
+        email: document.getElementById('email').value,
+        address: document.getElementById('address').value,
+        state: document.getElementById('state').value,
+        pincode: document.getElementById('zip').value
+    };
 
-        // Create order on your backend
+    try {
         const response = await fetch('/api/payment/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            credentials: 'include',
             body: JSON.stringify({
                 shipping: shippingData,
-                amount: amountInPaise
+                amount: Math.round(<%= cart.totalAmount %> * 100) // Convert to paise
             })
         });
 
-        const result = await response.json();
-
-        if (result.success) {
-            // Initialize Razorpay
+        const data = await response.json();
+        
+        if (data.success) {
             const options = {
-                key: result.data.key,
-                amount: result.data.amount,
-                currency: "INR",
-                name: "Your Store Name",
-                description: "Order Payment",
-                order_id: result.data.orderId,
+                key: data.data.key,
+                amount: data.data.amount,
+                currency: 'INR',
+                name: 'Silk Bazaar',
+                description: 'Order Payment',
+                order_id: data.data.razorpayOrderId,
                 handler: async function(response) {
-                    // Handle successful payment
-                    const verifyResponse = await fetch('/api/orders/verify', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        credentials: 'include',
-                        body: JSON.stringify({
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_signature: response.razorpay_signature
-                        })
-                    });
+                    try {
+                        const verifyResponse = await fetch('/api/payment/verify', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                orderId: data.data.orderId
+                            })
+                        });
 
-                    const verifyResult = await verifyResponse.json();
-                    
-                    if (verifyResult.success) {
-                        window.location.href = `/orders/${verifyResult.data.orderId}`;
-                    } else {
-                        throw new Error(verifyResult.message || 'Payment verification failed');
+                        const verifyData = await verifyResponse.json();
+                        
+                        if (verifyData.success) {
+                            window.location.href = '/orders?status=success';
+                        } else {
+                            // Record payment failure
+                            await fetch('/api/payment/failure', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    orderId: data.data.orderId,
+                                    reason: verifyData.message || 'Payment verification failed'
+                                })
+                            });
+                            
+                            window.location.href = '/orders?status=failed&message=' + encodeURIComponent(verifyData.message || 'Payment verification failed');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        // Record payment failure
+                        await fetch('/api/payment/failure', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                orderId: data.data.orderId,
+                                reason: 'Payment verification failed'
+                            })
+                        });
+                        
+                        window.location.href = '/orders?status=failed&message=' + encodeURIComponent('Payment verification failed');
                     }
                 },
                 prefill: {
-                    name: shippingData.firstName + ' ' + shippingData.lastName,
+                    name: shippingData.name,
                     email: shippingData.email
                 },
+                method: {
+                    upi: true,
+                    card: true,
+                    netbanking: true,
+                    wallet: true,
+                    paylater: true
+                },
                 theme: {
-                    color: "#3399cc"
+                    color: '#F37254'
                 }
             };
 
-            const razorpay = new Razorpay(options);
-            razorpay.open();
+            const rzp = new Razorpay(options);
+            rzp.open();
         } else {
-            throw new Error(result.message || 'Failed to create order');
+            alert(data.message || 'Failed to create order');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert(error.message || 'An error occurred while processing your payment');
+        alert('Failed to create order');
     }
 });
 </script>

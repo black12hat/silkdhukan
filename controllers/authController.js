@@ -13,12 +13,29 @@ const generateToken = (id) => {
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { companyName, email, password, role, businessType, taxId, address, phone } = req.body;
+    const { companyName, email, password, role, businessType, taxId, phone, address } = req.body;
 
     // Check if user exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ success: false, message: 'User already exists' });
+    }
+
+    // Validate business type
+    const validBusinessTypes = ['manufacturer', 'wholesaler', 'distributor', 'retailer'];
+    if (!validBusinessTypes.includes(businessType)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid business type. Must be one of: manufacturer, wholesaler, distributor, retailer' 
+      });
+    }
+
+    // Validate address object
+    if (!address || !address.street || !address.city || !address.state || !address.postalCode || !address.country) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Complete address information is required' 
+      });
     }
 
     // Create user
@@ -29,8 +46,14 @@ exports.register = async (req, res) => {
       role,
       businessType,
       taxId,
-      address,
-      phone
+      phone,
+      address: {
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        postalCode: address.postalCode,
+        country: address.country
+      }
     });
 
     if (user) {

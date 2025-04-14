@@ -18,6 +18,9 @@ const cartRoutes = require('./routes/cartRoutes');
 const fs = require('fs');
 const Cart = require('./models/Cart');
 const paymentRoutes = require('./routes/payment');
+const orderRoutes = require('./routes/orderRoutes');
+const userRoutes = require('./routes/user');
+require('./utils/escrowCron');
 
 dotenv.config();
 connectDB();
@@ -109,6 +112,8 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/profile', userRoutes);
 
 // Main Routes
 app.use('/seller', sellerRoutes);

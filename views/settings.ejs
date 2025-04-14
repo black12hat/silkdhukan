@@ -120,14 +120,35 @@
                                         <option value="">Select Business Type</option>
                                         <option value="manufacturer" <%= user.businessType === 'manufacturer' ? 'selected' : '' %>>Manufacturer</option>
                                         <option value="wholesaler" <%= user.businessType === 'wholesaler' ? 'selected' : '' %>>Wholesaler</option>
+                                        <option value="distributor" <%= user.businessType === 'distributor' ? 'selected' : '' %>>Distributor</option>
                                         <option value="retailer" <%= user.businessType === 'retailer' ? 'selected' : '' %>>Retailer</option>
                                     </select>
                                 </div>
 
                                 <div class="mb-3">
                                     <label for="businessAddress" class="form-label">Business Address</label>
-                                    <textarea class="form-control" id="businessAddress" name="businessAddress" 
-                                              rows="3" required><%= user.businessAddress || '' %></textarea>
+                                    <div class="row">
+                                        <div class="col-md-12 mb-2">
+                                            <input type="text" class="form-control" id="street" name="street" 
+                                                   placeholder="Street Address" value="<%= user.address?.street || '' %>" required>
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <input type="text" class="form-control" id="city" name="city" 
+                                                   placeholder="City" value="<%= user.address?.city || '' %>" required>
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <input type="text" class="form-control" id="state" name="state" 
+                                                   placeholder="State" value="<%= user.address?.state || '' %>" required>
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <input type="text" class="form-control" id="postalCode" name="postalCode" 
+                                                   placeholder="Postal Code" value="<%= user.address?.postalCode || '' %>" required>
+                                        </div>
+                                        <div class="col-md-6 mb-2">
+                                            <input type="text" class="form-control" id="country" name="country" 
+                                                   placeholder="Country" value="<%= user.address?.country || '' %>" required>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">
@@ -189,6 +210,7 @@
     </div>
 </div>
 
+<%- contentFor('script') %>
 <script>
 // Form validation
 (function() {
@@ -211,9 +233,17 @@ document.getElementById('profileForm').addEventListener('submit', async function
     
     try {
         const formData = new FormData(this);
-        const response = await fetch('/api/profile', {
+        const response = await fetch('/api/profile/profile', {
             method: 'PUT',
-            body: formData
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                email: formData.get('email'),
+                phone: formData.get('phone')
+            })
         });
 
         const result = await response.json();
@@ -235,6 +265,19 @@ document.getElementById('securityForm').addEventListener('submit', async functio
     
     try {
         const formData = new FormData(this);
+        const newPassword = formData.get('newPassword');
+        const confirmPassword = formData.get('confirmPassword');
+
+        // Validate password match
+        if (newPassword !== confirmPassword) {
+            throw new Error('New passwords do not match');
+        }
+
+        // Validate password length
+        if (newPassword.length < 6) {
+            throw new Error('Password must be at least 6 characters long');
+        }
+
         const response = await fetch('/api/profile/password', {
             method: 'PUT',
             headers: {
@@ -242,7 +285,8 @@ document.getElementById('securityForm').addEventListener('submit', async functio
             },
             body: JSON.stringify({
                 currentPassword: formData.get('currentPassword'),
-                newPassword: formData.get('newPassword')
+                newPassword: newPassword,
+                confirmPassword: confirmPassword
             })
         });
 
@@ -274,7 +318,13 @@ document.getElementById('businessForm').addEventListener('submit', async functio
             body: JSON.stringify({
                 companyName: formData.get('companyName'),
                 businessType: formData.get('businessType'),
-                businessAddress: formData.get('businessAddress'),
+                address: {
+                    street: formData.get('street'),
+                    city: formData.get('city'),
+                    state: formData.get('state'),
+                    postalCode: formData.get('postalCode'),
+                    country: formData.get('country')
+                },
                 gstNumber: formData.get('gstNumber')
             })
         });

@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
     },
     businessType: {
         type: String,
-        enum: ['Manufacturer', 'Wholesaler', 'Distributor', 'Retailer'],
+        enum: ['manufacturer', 'wholesaler', 'distributor', 'retailer'],
         required: [true, 'Please specify business type']
     },
     phone: {
@@ -37,8 +37,26 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Please add a phone number']
     },
     address: {
-        type: String,
-        required: [true, 'Please add an address']
+        street: {
+            type: String,
+            required: [true, 'Please add a street address']
+        },
+        city: {
+            type: String,
+            required: [true, 'Please add a city']
+        },
+        state: {
+            type: String,
+            required: [true, 'Please add a state']
+        },
+        postalCode: {
+            type: String,
+            required: [true, 'Please add a postal code']
+        },
+        country: {
+            type: String,
+            required: [true, 'Please add a country']
+        }
     },
     taxId: {
         type: String,

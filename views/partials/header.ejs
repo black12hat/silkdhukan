@@ -26,9 +26,6 @@
 
     /* Header Styles */
     .navbar {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
       background-color: var(--primary-dark);
       padding: 1rem 0;
     }
@@ -40,11 +37,6 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      transition: transform 0.2s ease-in-out;
-    }
-
-    .navbar-brand:hover {
-      transform: scale(1.05);
     }
 
     .navbar-brand i {
@@ -59,7 +51,6 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      position: relative;
     }
 
     .nav-link:hover {
@@ -75,21 +66,6 @@
     .nav-link i {
       color: var(--accent);
       font-size: 1.1rem;
-    }
-
-    .nav-link::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 0;
-      height: 2px;
-      background-color: #0d6efd;
-      transition: width 0.3s ease-in-out;
-    }
-
-    .nav-link:hover::after {
-      width: 100%;
     }
 
     /* Cart Button Styles */
@@ -170,113 +146,95 @@
         justify-content: center;
       }
     }
-
-    .dropdown-menu {
-      border: none;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-
-    .dropdown-item {
-      transition: background-color 0.2s ease-in-out;
-    }
-
-    .dropdown-item:hover {
-      background-color: #f8f9fa;
-    }
-
-    .badge {
-      transition: transform 0.2s ease-in-out;
-    }
-
-    .badge:hover {
-      transform: scale(1.1);
-    }
-
-    .animate__animated {
-      animation-duration: 0.5s;
-    }
-
-    .animate__fadeIn {
-      animation-delay: calc(var(--animation-order) * 0.1s);
-    }
   </style>
 </head>
 <body>
   <!-- Static Header for Non-Logged-In Users -->
-  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm">
+  <nav class="navbar navbar-expand-lg">
     <div class="container">
-      <a class="navbar-brand animate__animated animate__fadeIn" href="/">
-        <i class="fas fa-store me-2"></i>B2B Marketplace
+      <!-- Logo -->
+      <a class="navbar-brand" href="/">
+        <i class="fas fa-tshirt"></i>
+        SilkDhukan
       </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+
+      <!-- Mobile Toggle -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
         <span class="navbar-toggler-icon"></span>
       </button>
-      <div class="collapse navbar-collapse" id="navbarNav">
+
+      <!-- Navigation Items -->
+      <div class="collapse navbar-collapse" id="mainNav">
+        <!-- Left Nav Items -->
         <ul class="navbar-nav me-auto">
-          <li class="nav-item">
-            <a class="nav-link animate__animated animate__fadeIn" href="/products">
-              <i class="fas fa-box-open me-1"></i>Products
-            </a>
-          </li>
           <% if (locals.user && locals.user.role === 'buyer') { %>
             <li class="nav-item">
-              <a class="nav-link animate__animated animate__fadeIn" href="/cart">
-                <i class="fas fa-shopping-cart me-1"></i>Cart
-                <span class="badge bg-primary rounded-pill" id="cartCount">0</span>
+              <!-- <a class="nav-link <%= locals.path === '/cart' ? 'active' : '' %>" href="/cart">
+                <i class="fas fa-shopping-cart"></i>
+                Cart
+                <span id="cartCount" class="badge bg-danger">0</span>
+              </a> -->
+            </li>
+            <li class="nav-item">
+              <a class="nav-link <%= locals.path === '/' ? 'active' : '' %>" href="/">
+                <i class="fas fa-home"></i>
+                Home
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link animate__animated animate__fadeIn" href="/orders">
-                <i class="fas fa-clipboard-list me-1"></i>My Orders
+              <a class="nav-link <%= locals.path === '/prod' ? 'active' : '' %>" href="/prod">
+                <i class="fas fa-box"></i>
+                Products
               </a>
             </li>
           <% } else if (locals.user && locals.user.role === 'seller') { %>
             <li class="nav-item">
-              <a class="nav-link animate__animated animate__fadeIn" href="/seller/dashboard">
-                <i class="fas fa-chart-line me-1"></i>Dashboard
+              <a class="nav-link <%= locals.path === '/seller/dashboard' ? 'active' : '' %>" href="/seller/dashboard">
+                <i class="fas fa-store"></i>
+                Dashboard
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link animate__animated animate__fadeIn" href="/seller/products">
-                <i class="fas fa-box me-1"></i>My Products
+              <a class="nav-link <%= locals.path === '/seller/products' ? 'active' : '' %>" href="/seller/products">
+                <i class="fas fa-box"></i>
+                My Products
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link <%= locals.path === '/seller/orders' ? 'active' : '' %>" href="/seller/orders">
+                <i class="fas fa-shopping-bag"></i>
+                Orders
               </a>
             </li>
           <% } %>
         </ul>
-        <ul class="navbar-nav">
+
+        <!-- Right Nav Items -->
+        <ul class="navbar-nav auth-buttons">
           <% if (locals.user) { %>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle animate__animated animate__fadeIn" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                <i class="fas fa-user me-1"></i><%= locals.user.companyName %>
+              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                <i class="fas fa-user"></i>
+                <%= locals.user.companyName %>
               </a>
-              <ul class="dropdown-menu dropdown-menu-end animate__animated animate__fadeIn">
-                <li>
-                  <a class="dropdown-item" href="/profile">
-                    <i class="fas fa-user-circle me-2"></i>Profile
-                  </a>
-                </li>
-                <li>
-                  <a class="dropdown-item" href="/settings">
-                    <i class="fas fa-cog me-2"></i>Settings
-                  </a>
-                </li>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="/profile"><i class="fas fa-user-circle"></i> Profile</a></li>
+                <li><a class="dropdown-item" href="/settings"><i class="fas fa-cog"></i> Settings</a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li>
-                  <a class="dropdown-item" href="/logout">
-                    <i class="fas fa-sign-out-alt me-2"></i>Logout
-                  </a>
-                </li>
+                <li><a class="dropdown-item text-danger" href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
               </ul>
             </li>
           <% } else { %>
             <li class="nav-item">
-              <a class="nav-link animate__animated animate__fadeIn btn-login" href="/login">
-                <i class="fas fa-sign-in-alt me-1"></i>Login
+              <a class="nav-link btn-login" href="/login">
+                <i class="fas fa-sign-in-alt"></i>
+                Login
               </a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link animate__animated animate__fadeIn btn-register" href="/register">
-                <i class="fas fa-user-plus me-1"></i>Register
+            <li class="nav-item ms-2">
+              <a class="nav-link btn-register" href="/register">
+                <i class="fas fa-user-plus"></i>
+                Register
               </a>
             </li>
           <% } %>
@@ -289,22 +247,34 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   
   <!-- Cart Count Update Script -->
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
+  <!-- <script>
+    async function updateCartCount() {
       try {
-        // Update cart count
-        const response = await fetch('/api/cart/count');
+        const response = await fetch('/api/cart/count', {
+          credentials: 'same-origin'
+        });
+        
         if (response.ok) {
-          const { count } = await response.json();
+          const data = await response.json();
           const cartCount = document.getElementById('cartCount');
           if (cartCount) {
-            cartCount.textContent = count;
+            cartCount.textContent = data.count;
           }
         }
       } catch (error) {
         console.error('Error updating cart count:', error);
       }
+    }
+
+    // Update cart count when page loads
+    document.addEventListener('DOMContentLoaded', updateCartCount);
+
+    // Listen for cart updates from other pages
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'cartUpdate') {
+        updateCartCount();
+      }
     });
-  </script>
+  </script> -->
 </body>
 </html>

@@ -1,218 +1,397 @@
 <%- contentFor('body') %>
 <div class="container py-5">
-    <h1 class="mb-4 animate__animated animate__fadeIn">My Orders</h1>
-    
-    <% if (!user || user.role !== 'buyer') { %>
-        <div class="alert alert-warning animate__animated animate__fadeIn">
-            Please <a href="/login?redirect=/orders">login</a> as a buyer to view your orders.
-        </div>
-    <% } else { %>
-        <!-- Order Tabs -->
-        <ul class="nav nav-tabs mb-4" id="orderTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
-                    All Orders
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="processing-tab" data-bs-toggle="tab" data-bs-target="#processing" type="button" role="tab">
-                    Processing
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab">
-                    Completed
-                </button>
-            </li>
-        </ul>
+    <h1 class="mb-4">My Orders</h1>
 
-        <!-- Order Tabs Content -->
-        <div class="tab-content" id="orderTabsContent">
-            <!-- All Orders -->
-            <div class="tab-pane fade show active" id="all" role="tabpanel">
-                <div id="all-orders" class="orders-container">
-                    <!-- Orders will be loaded here -->
-                </div>
-            </div>
-
-            <!-- Processing Orders -->
-            <div class="tab-pane fade" id="processing" role="tabpanel">
-                <div id="processing-orders" class="orders-container">
-                    <!-- Processing orders will be loaded here -->
-                </div>
-            </div>
-
-            <!-- Completed Orders -->
-            <div class="tab-pane fade" id="completed" role="tabpanel">
-                <div id="completed-orders" class="orders-container">
-                    <!-- Completed orders will be loaded here -->
-                </div>
-            </div>
+    <!-- Payment Status Alert -->
+    <% if (typeof status !== 'undefined') { %>
+        <div class="alert alert-<%= status === 'success' ? 'success' : 'danger' %> alert-dismissible fade show" role="alert">
+            <% if (status === 'success') { %>
+                Payment successful! Your order has been placed.
+            <% } else { %>
+                Payment failed: <%= message || 'Unknown error occurred' %>
+            <% } %>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
         </div>
     <% } %>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Product</th>
+                                    <th>Amount</th>
+                                    <th>Order Status</th>
+                                    <th>Payment Status</th>
+                                    <th>Escrow Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody">
+                                <!-- Orders will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<%- contentFor('extraScripts') %>
-<script>
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        // Load orders data
-        const response = await fetch('/api/orders');
-        if (!response.ok) throw new Error('Failed to load orders');
-        
-        const { data } = await response.json();
-        
-        // Update orders container
-        const container = document.getElementById('orders-container');
-        if (!data || data.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-5 animate__animated animate__fadeIn">
-                    <i class="fas fa-shopping-bag fa-3x text-muted mb-3"></i>
-                    <h3>No Orders Yet</h3>
-                    <p>You haven't placed any orders yet. Start shopping to see your orders here!</p>
-                    <a href="/products" class="btn btn-primary">
-                        <i class="fas fa-store me-2"></i>Browse Products
-                    </a>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = data.map(order => `
-            <div class="card mb-3 animate__animated animate__fadeIn">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <h5 class="card-title">Order #${order._id}</h5>
-                            <p class="text-muted mb-0">
-                                <i class="fas fa-calendar me-2"></i>
-                                ${new Date(order.createdAt).toLocaleDateString()}
-                            </p>
-                        </div>
-                        <span class="badge bg-${getStatusColor(order.status)}">
-                            ${order.status}
-                        </span>
-                    </div>
-                    <hr>
-                    <div class="order-items">
-                        ${order.items.map(item => `
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <div>
-                                    <strong>${item.productName}</strong>
-                                    <div class="text-muted small">
-                                        Quantity: ${item.quantity} x ₹${item.productPrice.toFixed(2)}
-                                    </div>
-                                </div>
-                                <div class="text-end">
-                                    <strong>₹${(item.productPrice * item.quantity).toFixed(2)}</strong>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <hr>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>Total Amount:</strong>
-                            <span class="text-primary ms-2">₹${order.totalAmount.toFixed(2)}</span>
-                        </div>
-                        <div>
-                            <button class="btn btn-outline-primary" onclick="window.location.href='/orders/${order._id}'">
-                                <i class="fas fa-eye me-2"></i>View Details
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-
-    } catch (error) {
-        console.error('Orders error:', error);
-        const container = document.getElementById('orders-container');
-        container.innerHTML = `
-            <div class="alert alert-danger animate__animated animate__shakeX">
-                <h5>Error Loading Orders</h5>
-                <p>${error.message}</p>
-                <button class="btn btn-primary mt-2" onclick="window.location.reload()">
-                    Try Again
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1" role="dialog" aria-labelledby="orderDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderDetailsModalLabel">Order Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Order Information</h6>
+                        <p><strong>Order ID:</strong> <span id="modalOrderId"></span></p>
+                        <p><strong>Date:</strong> <span id="modalOrderDate"></span></p>
+                        <p><strong>Amount:</strong> <span id="modalOrderAmount"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Status Information</h6>
+                        <p><strong>Order Status:</strong> <span id="modalOrderStatus"></span></p>
+                        <p><strong>Payment Status:</strong> <span id="modalPaymentStatus"></span></p>
+                        <p><strong>Escrow Status:</strong> <span id="modalEscrowStatus"></span></p>
+                        <p><strong>Payment Error:</strong> <span id="modalPaymentError"></span></p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Product Details</h6>
+                        <div id="modalProductDetails"></div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Delivery Address</h6>
+                        <div id="modalDeliveryAddress"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="confirmDeliveryBtn" style="display: none;">Confirm Delivery</button>
+                <button type="button" class="btn btn-danger" id="raiseDisputeBtn" style="display: none;">Raise Dispute</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Store payment state in session storage
+function storePaymentState(orderId, status, message) {
+    sessionStorage.setItem('paymentState', JSON.stringify({
+        orderId,
+        status,
+        message,
+        timestamp: Date.now()
+    }));
+}
+
+function getPaymentState() {
+    const state = sessionStorage.getItem('paymentState');
+    if (state) {
+        const { timestamp } = JSON.parse(state);
+        // Clear state if older than 5 minutes
+        if (Date.now() - timestamp > 300000) {
+            sessionStorage.removeItem('paymentState');
+            return null;
+        }
+        return JSON.parse(state);
+    }
+    return null;
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+    // Check for payment state
+    const paymentState = getPaymentState();
+    if (paymentState) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${paymentState.status === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${paymentState.status === 'success' ? 'Payment successful! Your order has been placed.' : `Payment failed: ${paymentState.message}`}
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        `;
+        document.querySelector('.container').insertBefore(alertDiv, document.querySelector('h1'));
+        sessionStorage.removeItem('paymentState');
+    }
+
+    try {
+        const response = await fetch('/api/orders/myorders', {
+            credentials: 'include'
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            const ordersTableBody = document.getElementById('ordersTableBody');
+            ordersTableBody.innerHTML = '';
+
+            if (result.data.length === 0) {
+                ordersTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center">No orders found</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            result.data.forEach(order => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${order.orderId}</td>
+                    <td>${order.productName}</td>
+                    <td>₹${(order.amount / 100).toFixed(2)}</td>
+                    <td><span class="badge badge-${getStatusBadgeClass(order.deliveryStatus)}">${formatStatusText(order.deliveryStatus)}</span></td>
+                    <td><span class="badge badge-${getStatusBadgeClass(order.paymentStatus)}">${formatStatusText(order.paymentStatus)}</span></td>
+                    <td><span class="badge badge-${getStatusBadgeClass(order.escrowStatus || 'not_applicable')}">${formatStatusText(order.escrowStatus || 'N/A')}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewOrderDetails('${order._id}')">View Details</button>
+                        ${order.paymentStatus === 'failed' ? 
+                            `<button class="btn btn-sm btn-primary ml-2" onclick="retryPayment('${order._id}')">Retry Payment</button>` : 
+                            ''}
+                    </td>
+                `;
+                ordersTableBody.appendChild(row);
+            });
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        console.error('Error loading orders:', error);
+        const ordersTableBody = document.getElementById('ordersTableBody');
+        ordersTableBody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center text-danger">Failed to load orders. Please try again later.</td>
+            </tr>
         `;
     }
 });
 
-function getStatusColor(status) {
-    switch (status.toLowerCase()) {
+function formatStatusText(status) {
+    if (!status) return 'N/A';
+    return status.split('_').map(word => 
+        word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+}
+
+function getStatusBadgeClass(status) {
+    if (!status) return 'secondary';
+    
+    switch(status.toLowerCase()) {
         case 'pending':
+        case 'not_shipped':
             return 'warning';
-        case 'processing':
-            return 'info';
-        case 'shipped':
-            return 'primary';
+        case 'success':
         case 'delivered':
-            return 'success';
         case 'completed':
+        case 'released':
             return 'success';
-        case 'cancelled':
-            return 'danger';
+        case 'shipped':
+        case 'locked':
+            return 'info';
+        case 'failed':
         case 'disputed':
+        case 'refunded':
             return 'danger';
+        case 'not_applicable':
+            return 'secondary';
         default:
             return 'secondary';
     }
 }
+
+async function viewOrderDetails(orderId) {
+    try {
+        const response = await fetch(`/api/orders/${orderId}`, {
+            credentials: 'include'
+        });
+        const result = await response.json();
+
+        if (result.success) {
+            const order = result.data;
+            
+            // Update modal content
+            document.getElementById('modalOrderId').textContent = order.orderId;
+            document.getElementById('modalOrderDate').textContent = new Date(order.createdAt).toLocaleString();
+            document.getElementById('modalOrderAmount').textContent = `₹${(order.amount / 100).toFixed(2)}`;
+            document.getElementById('modalOrderStatus').textContent = formatStatusText(order.deliveryStatus);
+            document.getElementById('modalPaymentStatus').textContent = formatStatusText(order.paymentStatus);
+            document.getElementById('modalEscrowStatus').textContent = formatStatusText(order.escrowStatus || 'N/A');
+            document.getElementById('modalPaymentError').textContent = order.paymentError || 'None';
+
+            // Update product details
+            document.getElementById('modalProductDetails').innerHTML = `
+                <p><strong>Name:</strong> ${order.productName}</p>
+                <p><strong>Price:</strong> ₹${(order.amount / 100).toFixed(2)}</p>
+                <p><strong>Quantity:</strong> ${order.quantity}</p>
+            `;
+
+            // Update delivery address
+            const address = order.deliveryAddress;
+            document.getElementById('modalDeliveryAddress').innerHTML = `
+                <p><strong>Name:</strong> ${address.name}</p>
+                <p><strong>Phone:</strong> ${address.phone}</p>
+                <p><strong>Address:</strong> ${address.address}</p>
+                <p><strong>State:</strong> ${address.state}</p>
+                <p><strong>Pincode:</strong> ${address.pincode}</p>
+                <p><strong>Country:</strong> ${address.country}</p>
+            `;
+
+            // Show/hide action buttons based on order status
+            const confirmDeliveryBtn = document.getElementById('confirmDeliveryBtn');
+            const raiseDisputeBtn = document.getElementById('raiseDisputeBtn');
+
+            if (order.deliveryStatus === 'delivered' && order.escrowStatus === 'locked') {
+                confirmDeliveryBtn.style.display = 'block';
+                confirmDeliveryBtn.onclick = () => confirmDelivery(orderId);
+            } else {
+                confirmDeliveryBtn.style.display = 'none';
+            }
+
+            if (order.escrowStatus === 'locked' && order.deliveryStatus !== 'completed') {
+                raiseDisputeBtn.style.display = 'block';
+                raiseDisputeBtn.onclick = () => raiseDispute(orderId);
+            } else {
+                raiseDisputeBtn.style.display = 'none';
+            }
+
+            $('#orderDetailsModal').modal('show');
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to load order details. Please try again later.');
+    }
+}
+
+async function retryPayment(orderId) {
+    try {
+        const response = await fetch(`/api/orders/${orderId}/retry-payment`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            // Store payment state
+            storePaymentState(orderId, 'pending', 'Payment initiated');
+            // Redirect to payment page
+            window.location.href = result.data.paymentUrl;
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        console.error('Error retrying payment:', error);
+        alert('Failed to initiate payment. Please try again later.');
+    }
+}
+
+async function confirmDelivery(orderId) {
+    try {
+        const response = await fetch(`/api/orders/${orderId}/delivery-status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ status: 'completed' })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert('Delivery confirmed successfully! Funds have been released to the seller.');
+            location.reload();
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        console.error('Error confirming delivery:', error);
+        alert('Failed to confirm delivery. Please try again later.');
+    }
+}
+
+async function raiseDispute(orderId) {
+    const reason = prompt('Please enter the reason for dispute:');
+    if (!reason) return;
+
+    try {
+        const response = await fetch(`/api/orders/${orderId}/dispute`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ reason })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert('Dispute raised successfully! Our team will review it shortly.');
+            location.reload();
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        console.error('Error raising dispute:', error);
+        alert('Failed to raise dispute. Please try again later.');
+    }
+}
 </script>
 
-<%- contentFor('extraStyles') %>
+<%- contentFor('style') %>
 <style>
-.orders-container {
-    min-height: 200px;
-}
-
-.card-header {
-    background-color: #f8f9fa;
-}
-
 .badge {
-    font-size: 0.9rem;
-    padding: 0.5em 0.8em;
+    padding: 0.5em 1em;
+    font-size: 0.875rem;
 }
 
-.nav-tabs .nav-link {
-    color: #495057;
-    font-weight: 500;
+.badge-warning {
+    background-color: #ffc107;
+    color: #212529;
 }
 
-.nav-tabs .nav-link.active {
-    color: #0d6efd;
+.badge-success {
+    background-color: #28a745;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+}
+
+.badge-danger {
+    background-color: #dc3545;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+}
+
+.table th {
     font-weight: 600;
 }
 
-.card {
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
-    animation-duration: 0.5s;
-}
-
-.animate__animated {
-    animation-duration: 0.5s;
-}
-
-.animate__fadeIn {
-    animation-delay: 0.1s;
-}
-
-.animate__shakeX {
-    animation-duration: 0.5s;
+.modal-body p {
+    margin-bottom: 0.5rem;
 }
 </style> 
